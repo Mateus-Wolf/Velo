@@ -1,0 +1,614 @@
+{
+    "profile": {
+        "title": "My Profile",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "success": "Profile updated successfully!",
+        "error": "Error updating profile. Please try again.",
+        "theme": "Theme",
+        "language": "Language",
+        "light": "Light",
+        "dark": "Dark"
+    },
+    "languages": {
+        "pt": "Portuguese (BR)",
+        "en": "English",
+        "es": "Spanish"
+    },
+    "login": {
+        "welcome_back": "Welcome back!",
+        "create_account": "Create your free account",
+        "tab_login": "Sign In",
+        "tab_register": "Sign Up",
+        "name_label": "Full Name",
+        "email_label": "Email",
+        "password_label": "Password",
+        "confirm_password_label": "Confirm Password",
+        "remember_me": "Remember me",
+        "btn_login": "Sign In",
+        "btn_register": "Sign Up",
+        "btn_loading": "Loading...",
+        "err_pass_mismatch": "Passwords do not match.",
+        "err_pass_length": "Password must be at least 6 characters.",
+        "err_invalid_code": "Please enter the full validation code.",
+        "2fa_notice": "Your device is not recognized or it's your first time authenticating. We sent a code to your email.",
+        "2fa_code_label": "6-digit code",
+        "2fa_verify_btn": "Verify Code",
+        "cancel": "Cancel",
+        "forgot_password_link": "Forgot password",
+        "no_account": "Don't have an account?",
+        "has_account": "Already have an account?"
+    },
+    "forgotPassword": {
+        "title": "Recover Password",
+        "subtitle_step1": "Enter your email to receive a code",
+        "subtitle_step2": "Enter the code we sent to your email",
+        "subtitle_step3": "Set your new password",
+        "step1": "Email",
+        "step2": "Code",
+        "step3": "New Password",
+        "err_no_email": "Enter your email.",
+        "err_invalid_code": "Enter the 6-digit code.",
+        "err_pass_length": "Password must be at least 6 characters.",
+        "err_pass_mismatch": "Passwords do not match.",
+        "success_sent": "Code sent! Check your email.",
+        "success_verified": "Code verified!",
+        "success_reset": "Password reset successfully!",
+        "email_label": "Registered Email",
+        "btn_send_code": "Send code",
+        "notice_sent_to": "We sent a 6-digit code to ",
+        "btn_verify_code": "Verify code",
+        "btn_resend": "Resend code",
+        "new_password_label": "New password",
+        "confirm_new_password_label": "Confirm new password",
+        "btn_reset": "Reset password",
+        "back_to_login": "Back to login"
+    },
+    "calendar": {
+        "modals": {
+            "cancel": {
+                "cancelThis": "Cancel only this appointment",
+                "title": "Cancel Appointment",
+                "description": "Are you sure you want to cancel this appointment? This action cannot be undone.",
+                "confirm": "Yes, cancel",
+                "back": "Back",
+                "cancelAllFuture": "Also cancel all future appointments in this recurrence"
+            },
+            "edit": {
+                "errorFields": "Fill all fields.",
+                "errorUpdate": "Error updating.",
+                "workplace": "Workplace *",
+                "select": "Select",
+                "client": "Client *",
+                "selectClient": "Select the client",
+                "selectWorkplaceFirst": "Select workplace first",
+                "noClients": "No clients registered in this workplace",
+                "date": "Date *",
+                "dateWarning": "⚠ Changing date alters status to ",
+                "start": "Start *",
+                "end": "End *",
+                "recurring": "Recurring appointment",
+                "recurringDesc": "Repeat this appointment",
+                "save": "Save changes",
+                "title": "Edit Appointment"
+            },
+            "create": {
+                "errorFields": "Fill all required fields.",
+                "errorCreate": "Error creating appointment.",
+                "workplace": "Workplace *",
+                "selectWorkplace": "Select workplace",
+                "client": "Client *",
+                "selectClient": "Select client",
+                "selectWorkplaceFirst": "Select a workplace first",
+                "noClients": "No clients in this workplace",
+                "date": "Date *",
+                "start": "Start *",
+                "end": "End *",
+                "recurring": "Recurring client",
+                "recurringDesc": "Repeat this appointment",
+                "recurringNote": "Appointments will be created for the next 2 months.",
+                "submit": "Create appointment",
+                "title": "New Appointment"
+            }
+        },
+        "notifications": {
+            "0": "N",
+            "1": "o",
+            "2": "t",
+            "3": "i",
+            "4": "f",
+            "5": "i",
+            "6": "c",
+            "7": "a",
+            "8": "t",
+            "9": "i",
+            "10": "o",
+            "11": "n",
+            "12": "s",
+            "30min": "30 minutes before",
+            "30minDesc": "Receive a reminder 30 minutes before each appointment",
+            "1day": "1 day before",
+            "1dayDesc": "Receive a reminder the day before the appointment",
+            "2days": "2 days before",
+            "2daysDesc": "Receive a reminder 2 days before the appointment",
+            "title": "Notifications",
+            "descriptionP1": "📧 Configure your appointment notifications. Reminders will be sent automatically to the ",
+            "descriptionP2": "email registered in your account",
+            "save": "Save settings"
+        },
+        "legend": {
+            "futureAppt": "Future w/ appt",
+            "pastAppt": "Past w/ appt",
+            "pastNoAppt": "Past w/o appt",
+            "tapDayMobile": "Tap a day to view appointments",
+            "tapDayDesktop": "Select a day to view appointments",
+            "show": "Show legend",
+            "hide": "Hide legend",
+            "today": "Today",
+            "futureWithAppt": "Future w/ appt",
+            "pastWithAppt": "Past w/ appt",
+            "pastWithoutAppt": "Past without appt"
+        },
+        "title": "Calendar",
+        "months": {
+            "0": "January",
+            "1": "February",
+            "2": "March",
+            "3": "April",
+            "4": "May",
+            "5": "June",
+            "6": "July",
+            "7": "August",
+            "8": "September",
+            "9": "October",
+            "10": "November",
+            "11": "December"
+        },
+        "days": {
+            "0": "Sun",
+            "1": "Mon",
+            "2": "Tue",
+            "3": "Wed",
+            "4": "Thu",
+            "5": "Fri",
+            "6": "Sat"
+        },
+        "daysShort": {
+            "0": "Sun",
+            "1": "Mon",
+            "2": "Tue",
+            "3": "Wed",
+            "4": "Thu",
+            "5": "Fri",
+            "6": "Sat"
+        },
+        "daysLong": {
+            "0": "Sunday",
+            "1": "Monday",
+            "2": "Tuesday",
+            "3": "Wednesday",
+            "4": "Thursday",
+            "5": "Friday",
+            "6": "Saturday"
+        },
+        "recurrence": {
+            "frequency": "Frequency",
+            "week1": "1 Week",
+            "week2": "2 Weeks",
+            "week3": "3 Weeks",
+            "month1": "1 Month",
+            "everyDay": "Every day",
+            "every": "Every",
+            "day": "Day"
+        },
+        "views": {
+            "month": "Month",
+            "week": "Week",
+            "day": "Day"
+        },
+        "today": "Today",
+        "schedule": "Schedule",
+        "searchClient": "Search client...",
+        "filters": {
+            "button": "Filters",
+            "allWorkplaces": "All workplaces",
+            "clear": "Clear"
+        },
+        "mobilePanel": {
+            "empty": "Tap a day to see appointments"
+        },
+        "desktopPanel": {
+            "empty": "Select a day in the calendar to see appointments"
+        },
+        "dayPanel": {
+            "title": "Appointments",
+            "empty": "No appointments for this day.",
+            "client": "Client",
+            "workplace": "Workplace",
+            "status": "Status",
+            "edit": "Edit",
+            "cancel": "Cancel"
+        },
+        "status": {
+            "scheduled": "Scheduled",
+            "completed": "Completed",
+            "canceled": "Canceled"
+        },
+        "toast": {
+            "notifSuccess": "Notification preferences saved successfully!"
+        }
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "greeting": "Hello, {{name}}!",
+        "greetingSubtitle": "Here is the summary of your appointments.",
+        "stats": {
+            "total": "Total Appointments",
+            "completed": "Completed",
+            "canceled": "Canceled",
+            "upcoming": "Upcoming"
+        },
+        "charts": {
+            "statusTitle": "Appointment Status",
+            "noData": "Not enough data to display the chart."
+        },
+        "recentAppts": {
+            "title": "Most Recent Appointments",
+            "empty": "No recent appointments found."
+        }
+    },
+    "workplaces": {
+        "modal": {
+            "errorName": "Workplace name is required.",
+            "errorDays": "Select at least one working day.",
+            "errorSave": "Error saving workplace.",
+            "createTitle": "New Workplace",
+            "upload": "Click to upload an image",
+            "uploadDesc": "PNG, JPG, WEBP up to 5MB",
+            "breakDesc": "Set break or lunch time",
+            "active": "Active — visible in calendar",
+            "inactive": "Inactive — hidden from calendar",
+            "save": "Save changes",
+            "create": "Create workplace",
+            "newTitle": "New Workplace",
+            "editTitle": "Edit Workplace",
+            "name": "Workplace name *",
+            "description": "Description",
+            "cep": "ZIP Code",
+            "number": "Number",
+            "address": "Address (Auto-filled)",
+            "image": "Workplace Image",
+            "imageHint": "Click to upload an image",
+            "imageTypes": "PNG, JPG, WEBP up to 5MB",
+            "workDays": "Operating days *",
+            "weekdays": "Weekdays",
+            "weekend": "Weekend",
+            "startTime": "Start (Office hours)",
+            "endTime": "End (Office hours)",
+            "addBreak": "Add Break",
+            "addBreakDesc": "Set break or lunch time during office hours",
+            "breakStart": "Break Start",
+            "breakEnd": "Break End",
+            "holidays": "Works on holidays",
+            "holidaysDesc": "Allow appointments on holidays",
+            "status": "Workplace status",
+            "statusActive": "Active — visible in calendar",
+            "statusInactive": "Inactive — hidden from calendar",
+            "saveBtn": "Save changes",
+            "createBtn": "Create workplace",
+            "errors": {
+                "nameRequired": "The workplace name is required.",
+                "daysRequired": "Select at least one operating day.",
+                "defaultEdit": "Error updating workplace.",
+                "defaultCreate": "Error creating workplace."
+            }
+        },
+        "deleteModal": {
+            "cancel": "Cancel",
+            "title": "Delete Workplace",
+            "description": "Are you sure you want to delete this workplace? This action cannot be undone.",
+            "confirm": "Delete"
+        },
+        "card": {
+            "history": "View workplace history",
+            "address": "Address",
+            "phone": "Phone",
+            "clients": "Clients",
+            "edit": "Edit workplace",
+            "delete": "Delete",
+            "manage": "Manage Pkg / Rules"
+        },
+        "status": {
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "description": "Manage your locations and organize your schedule",
+        "sortItems": {
+            "nameAsc": "A → Z",
+            "nameDesc": "Z → A",
+            "newest": "Newest",
+            "oldest": "Oldest"
+        },
+        "noResults": {
+            "title": "No location found",
+            "subtitle": "Try another search term"
+        },
+        "title": "My Workplaces",
+        "searchPlaceholder": "Search workplace...",
+        "newWorkplace": "New Workplace",
+        "empty": {
+            "title": "No workplaces",
+            "description": "You don't have any workplaces registered yet. Create your first workplace to start organizing your schedule.",
+            "button": "Create first workplace"
+        },
+        "page": {
+            "back": "Back",
+            "searchClient": "Search client...",
+            "filter": "Filters",
+            "newClient": "New Client",
+            "clientList": "Client List",
+            "packageRules": "Packages and Rules",
+            "emptyClients": {
+                "title": "No clients registered",
+                "description": "Add your first client to this workplace.",
+                "button": "Register first client"
+            },
+            "clientCard": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "history": "View client history",
+                "copyMove": "Copy / Move to another workplace",
+                "edit": "Edit client",
+                "delete": "Delete client"
+            },
+            "filterModal": {
+                "title": "Filters",
+                "statusLabel": "Client status",
+                "all": "All",
+                "active": "Active",
+                "inactive": "Inactive",
+                "clear": "Clear",
+                "apply": "Apply"
+            },
+            "clientModal": {
+                "newTitle": "New Client",
+                "editTitle": "Edit Client",
+                "name": "Name *",
+                "namePlaceholder": "Client name",
+                "email": "Email",
+                "emailOptional": "(Optional)",
+                "emailPlaceholder": "email@example.com",
+                "emailHint": "If filled, we will send an appointment confirmation by email.",
+                "contact": "Contact",
+                "contactPlaceholder": "Phone or email",
+                "notes": "Notes",
+                "notesPlaceholder": "Additional notes...",
+                "status": "Client status",
+                "statusActive": "Active — can receive appointments",
+                "statusInactive": "Inactive — does not appear in selection",
+                "saveBtn": "Save changes",
+                "createBtn": "Register client",
+                "errors": {
+                    "nameRequired": "The client name is required.",
+                    "defaultEdit": "Error updating client.",
+                    "defaultCreate": "Error registering client."
+                }
+            },
+            "copyMoveModal": {
+                "title": "Copy / Move Client",
+                "noContact": "No contact",
+                "targetLabel": "Target workplace *",
+                "targetPlaceholder": "Select workplace",
+                "noOtherWorkplaces": "No other workplace available",
+                "copy": "Copy",
+                "move": "Move",
+                "helpTextCopy": "Copy — the client will be in both workplaces.",
+                "helpTextMove": "Move — the client will be removed from this workplace and sent to the destination.",
+                "errors": {
+                    "targetRequired": "Select a target workplace.",
+                    "default": "Error processing."
+                }
+            }
+        }
+    },
+    "notification": {
+        "appointmentNear": "🔔 Upcoming appointment!",
+        "in30min": "In ~30 minutes",
+        "tomorrow": "Tomorrow",
+        "in2days": "In 2 days",
+        "closeAll": "Close all ({{count}})"
+    },
+    "searchableSelect": {
+        "search": "Search client...",
+        "placeholder": "Select client",
+        "empty": "No client",
+        "notFound": "No client found"
+    },
+    "settings": {
+        "title": "Settings",
+        "theme": "Theme",
+        "dark": "Dark",
+        "light": "Light",
+        "language": "Language"
+    },
+    "dropdown": {
+        "user": "User",
+        "profile": "Profile",
+        "dashboard": "Dashboard",
+        "history": "History",
+        "settings": "Settings",
+        "logout": "Logout",
+        "client": "Client"
+    },
+    "cancellation": {
+        "invalidLink": "Invalid link. No cancellation token was provided.",
+        "successMsg": "Appointment successfully cancelled!",
+        "errorMsg": "An error occurred while cancelling your appointment. The link might have expired.",
+        "processing": "Processing...",
+        "cancelled": "Cancelled",
+        "oops": "Oops!",
+        "loadingDesc": "Please wait a moment while we cancel your appointment."
+    },
+    "status": {
+        "scheduled": "Scheduled",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "canceled": "Cancelled",
+        "rescheduled": "Rescheduled"
+    },
+    "common": {
+        "back": "Back",
+        "filters": "Filters",
+        "clear": "Clear",
+        "all": "All",
+        "at": "at",
+        "locale": "en-US",
+        "tryAgain": "Try again",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "active": "Active",
+        "inactive": "Inactive",
+        "actives": "Actives",
+        "inactives": "Inactives",
+        "apply": "Apply",
+        "optional": "(Optional)",
+        "saveChanges": "Save changes",
+        "createClient": "Create client",
+        "errorProcess": "Error processing.",
+        "noContact": "No contact",
+        "copy": "Copy",
+        "move": "Move",
+        "newClient": "New client"
+    },
+    "history": {
+        "clientHistoryTitle": "{{name}}'s History",
+        "clientHistoryDesc": "All appointments for this client",
+        "recordsCount": "{{count}} records",
+        "dateFrom": "Date from",
+        "dateTo": "Date to",
+        "noRecords": "No records found",
+        "noRecordsDesc": "Adjust filters or verify data",
+        "workplace": "Workplace",
+        "date": "Date",
+        "calendarBtn": "Calendar",
+        "userHistoryTitle": "My History",
+        "userHistoryDesc": "All your appointments across all locations",
+        "workplaceFilter": "Workplace",
+        "allWorkplaces": "All workplaces",
+        "filterPlaceholder": "Filter by client...",
+        "workplaceHistoryTitle": "History — {{name}}",
+        "workplaceHistoryDesc": "All appointments held at this location"
+    },
+    "confirmation": {
+        "invalidLink": "Invalid link. No confirmation token was provided.",
+        "successMsg": "Appointment successfully confirmed!",
+        "errorMsg": "An error occurred while confirming your appointment. The link might have expired.",
+        "confirming": "Confirming...",
+        "allGood": "All good!",
+        "oops": "Oops!",
+        "loadingDesc": "Please wait a moment while we validate your appointment."
+    },
+    "helvetica": "bold",
+    "metrics": {
+        "reportOf": "Report of:",
+        "generatedAt": "Generated at:",
+        "topClients": "Most loyal clients",
+        "position": "Position",
+        "totalAppointments": "Total Appointments",
+        "topWorkplacesTitlePdf": "Busiest Workplaces",
+        "clientsCountTitle": "Client Qty.",
+        "longestAppointments": "Longest appointments",
+        "duration": "Duration",
+        "weekFrequency": "Weekly frequency",
+        "dayOfWeek": "Day of the Week",
+        "timePeaks": "Time peaks",
+        "timeRange": "Time Range",
+        "appointmentsQty": "Appts Qty.",
+        "operationsSummary": "Operations Summary",
+        "appointmentMetric": "Appointment Metric",
+        "accumulatedTotal": "Accumulated Total",
+        "canceledAppointments": "Cancelled Appointments",
+        "rescheduledAppointments": "Rescheduled Appointments",
+        "confidentialFooter": "Velo - Confidential Document - Page {{page}} of {{total}}",
+        "appointmentsCount": "appointments",
+        "durationMin": "Duration (min)",
+        "metric": "Metric",
+        "total": "Total: ",
+        "summary": "Summary",
+        "loading": "Loading dashboard...",
+        "error": "Failed to load metrics.",
+        "overview": "Overview",
+        "overviewDesc": "Consolidated metrics for your account",
+        "exportPdf": "Export PDF",
+        "exportExcel": "Export Spreadsheet",
+        "noData": "No data found.",
+        "topWorkplaces": "Busiest workplaces",
+        "clientsCount": "clients",
+        "selectSlice": "Select a slice"
+    },
+    "success": "Photo removed!",
+    "error": "Passwords mismatch",
+    "workplace": {
+        "card": {
+            "history": "View client history",
+            "copyMove": "Copy / Move to another location",
+            "edit": "Edit client",
+            "delete": "Delete client"
+        },
+        "filters": {
+            "status": "Client status"
+        },
+        "modal": {
+            "errorName": "Client name is required.",
+            "errorSave": "Error saving client.",
+            "editTitle": "Edit Client",
+            "createTitle": "New Client",
+            "name": "Name *",
+            "namePlaceholder": "Client's name",
+            "email": "E-mail",
+            "emailHint": "If provided, we will send an appointment confirmation via email.",
+            "contact": "Contact",
+            "contactPlaceholder": "Phone or email",
+            "notes": "Notes",
+            "notesPlaceholder": "Additional notes...",
+            "status": "Client status",
+            "statusActive": "Active — can receive appointments",
+            "statusInactive": "Inactive — does not appear in selection"
+        },
+        "empty": {
+            "title": "No clients registered",
+            "desc": "Add your first client to this workplace.",
+            "button": "Register first client"
+        },
+        "copyMove": {
+            "errorTarget": "Select a destination workplace.",
+            "title": "Copy / Move Client",
+            "targetLabel": "Destination workplace *",
+            "targetPlaceholder": "Select the workplace",
+            "noTarget": "No other workplace available",
+            "copyHint": "the client will be in both locations.",
+            "moveHint": "the client will be removed from this location and moved to the destination."
+        },
+        "back": "Back to workplaces",
+        "subtitle": "Clients of this workplace",
+        "searchPlaceholder": "Search client by name...",
+        "sort": {
+            "az": "A → Z",
+            "za": "Z → A",
+            "newest": "Newest",
+            "oldest": "Oldest"
+        },
+        "resultsCount": "{{count}} clients found",
+        "noResults": {
+            "title": "No client found",
+            "desc": "Try another search term or adjust filters"
+        },
+        "delete": {
+            "title": "Delete client?",
+            "desc": "The client "
+        }
+    }
+}

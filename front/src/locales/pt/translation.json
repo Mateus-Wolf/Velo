@@ -1,0 +1,613 @@
+{
+    "profile": {
+        "title": "Meu Perfil",
+        "name": "Nome",
+        "email": "E-mail",
+        "phone": "Telefone",
+        "save": "Salvar Alterações",
+        "saving": "Salvando...",
+        "success": "Perfil atualizado com sucesso!",
+        "error": "Erro ao atualizar perfil. Tente novamente.",
+        "theme": "Tema",
+        "language": "Idioma",
+        "light": "Claro",
+        "dark": "Escuro"
+    },
+    "languages": {
+        "pt": "Português (BR)",
+        "en": "Inglês",
+        "es": "Espanhol"
+    },
+    "login": {
+        "welcome_back": "Bem-vindo de volta!",
+        "create_account": "Crie sua conta gratuita",
+        "tab_login": "Entrar",
+        "tab_register": "Criar conta",
+        "name_label": "Nome completo",
+        "email_label": "Email",
+        "password_label": "Senha",
+        "confirm_password_label": "Confirmar senha",
+        "remember_me": "Lembrar de mim",
+        "btn_login": "Entrar",
+        "btn_register": "Criar conta",
+        "btn_loading": "Carregando...",
+        "err_pass_mismatch": "As senhas não coincidem.",
+        "err_pass_length": "A senha deve ter no mínimo 6 caracteres.",
+        "err_invalid_code": "Insira o código de validação completo.",
+        "2fa_notice": "Seu aparelho não está reconhecido ou é a primeira vez autenticando. Enviamos um código para seu e-mail.",
+        "2fa_code_label": "Código de 6 dígitos",
+        "2fa_verify_btn": "Verificar Código",
+        "cancel": "Cancelar",
+        "forgot_password_link": "Esqueci minha senha",
+        "no_account": "Ainda não tem conta?",
+        "has_account": "Já tem uma conta?"
+    },
+    "forgotPassword": {
+        "title": "Recuperar Senha",
+        "subtitle_step1": "Informe seu email para receber o código",
+        "subtitle_step2": "Digite o código que enviamos para seu email",
+        "subtitle_step3": "Defina sua nova senha",
+        "step1": "Email",
+        "step2": "Código",
+        "step3": "Nova senha",
+        "err_no_email": "Informe seu email.",
+        "err_invalid_code": "Insira o código de 6 dígitos.",
+        "err_pass_length": "A senha deve ter no mínimo 6 caracteres.",
+        "err_pass_mismatch": "As senhas não coincidem.",
+        "success_sent": "Código enviado! Verifique seu email.",
+        "success_verified": "Código verificado!",
+        "success_reset": "Senha redefinida com sucesso!",
+        "email_label": "Email cadastrado",
+        "btn_send_code": "Enviar código",
+        "notice_sent_to": "Enviamos um código de 6 dígitos para ",
+        "btn_verify_code": "Verificar código",
+        "btn_resend": "Reenviar código",
+        "new_password_label": "Nova senha",
+        "confirm_new_password_label": "Confirmar nova senha",
+        "btn_reset": "Redefinir senha",
+        "back_to_login": "Voltar ao login"
+    },
+    "calendar": {
+        "modals": {
+            "cancel": {
+                "cancelThis": "Cancelar apenas este atendimento",
+                "title": "Cancelar Agendamento",
+                "description": "Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.",
+                "confirm": "Sim, cancelar",
+                "back": "Voltar",
+                "cancelAllFuture": "Cancelar também todos os agendamentos futuros desta recorrência"
+            },
+            "edit": {
+                "errorFields": "Preencha todos os campos.",
+                "errorUpdate": "Erro ao atualizar.",
+                "workplace": "Local *",
+                "select": "Selecione",
+                "client": "Cliente *",
+                "selectClient": "Selecione o cliente",
+                "selectWorkplaceFirst": "Selecione local primeiro",
+                "noClients": "Nenhum cliente cadastrado neste local",
+                "date": "Data *",
+                "dateWarning": "⚠ Mudar a data altera o status para ",
+                "start": "Início *",
+                "end": "Fim *",
+                "recurring": "Agendamento recorrente",
+                "recurringDesc": "Repetir este agendamento",
+                "save": "Salvar alterações",
+                "title": "Editar Agendamento"
+            },
+            "create": {
+                "errorFields": "Preencha todos os campos obrigatórios.",
+                "errorCreate": "Erro ao criar agendamento.",
+                "workplace": "Local *",
+                "selectWorkplace": "Selecione o local",
+                "client": "Cliente *",
+                "selectClient": "Selecione o cliente",
+                "selectWorkplaceFirst": "Selecione um local primeiro",
+                "noClients": "Nenhum cliente neste local",
+                "date": "Data *",
+                "start": "Início *",
+                "end": "Fim *",
+                "recurring": "Cliente recorrente",
+                "recurringDesc": "Repete este agendamento",
+                "recurringNote": "Serão criados agendamentos para os próximos 2 meses.",
+                "submit": "Criar agendamento",
+                "title": "Novo Agendamento"
+            }
+        },
+        "notifications": {
+            "0": "N",
+            "1": "o",
+            "2": "t",
+            "3": "i",
+            "4": "f",
+            "5": "i",
+            "6": "c",
+            "7": "a",
+            "8": "ç",
+            "9": "õ",
+            "10": "e",
+            "11": "s",
+            "30min": "30 minutos antes",
+            "30minDesc": "Receba um lembrete 30 minutos antes de cada agendamento",
+            "1day": "1 dia antes",
+            "1dayDesc": "Receba um lembrete no dia anterior ao agendamento",
+            "2days": "2 dias antes",
+            "2daysDesc": "Receba um lembrete 2 dias antes do agendamento",
+            "title": "Notificações",
+            "descriptionP1": "📧 Configure suas notificações de agendamento. Os lembretes serão enviados automaticamente para o ",
+            "descriptionP2": "email cadastrado na sua conta",
+            "save": "Salvar configurações"
+        },
+        "legend": {
+            "futureAppt": "Futuro c/ consulta",
+            "pastAppt": "Passado c/ consulta",
+            "pastNoAppt": "Passado s/ consulta",
+            "tapDayMobile": "Toque em um dia para ver os agendamentos",
+            "tapDayDesktop": "Selecione um dia no calendário para ver os agendamentos",
+            "show": "Mostrar legenda",
+            "hide": "Ocultar legenda",
+            "today": "Hoje",
+            "futureWithAppt": "Futuro c/ consulta",
+            "pastWithAppt": "Passado c/ consulta",
+            "pastWithoutAppt": "Passado s/ consulta"
+        },
+        "title": "Calendário",
+        "months": {
+            "0": "Janeiro",
+            "1": "Fevereiro",
+            "2": "Março",
+            "3": "Abril",
+            "4": "Maio",
+            "5": "Junho",
+            "6": "Julho",
+            "7": "Agosto",
+            "8": "Setembro",
+            "9": "Outubro",
+            "10": "Novembro",
+            "11": "Dezembro"
+        },
+        "days": {
+            "0": "Dom",
+            "1": "Seg",
+            "2": "Ter",
+            "3": "Qua",
+            "4": "Qui",
+            "5": "Sex",
+            "6": "Sáb"
+        },
+        "daysShort": {
+            "0": "Dom",
+            "1": "Seg",
+            "2": "Ter",
+            "3": "Qua",
+            "4": "Qui",
+            "5": "Sex",
+            "6": "Sáb"
+        },
+        "daysLong": {
+            "0": "Domingo",
+            "1": "Segunda",
+            "2": "Terça",
+            "3": "Quarta",
+            "4": "Quinta",
+            "5": "Sexta",
+            "6": "Sábado"
+        },
+        "recurrence": {
+            "frequency": "Frequência",
+            "week1": "1 Semana",
+            "week2": "2 Semanas",
+            "week3": "3 Semanas",
+            "month1": "1 Mês",
+            "everyDay": "Todo dia",
+            "every": "Toda",
+            "day": "Dia"
+        },
+        "views": {
+            "month": "Mês",
+            "week": "Semana",
+            "day": "Dia"
+        },
+        "today": "Hoje",
+        "schedule": "Agendar",
+        "searchClient": "Buscar cliente...",
+        "filters": {
+            "button": "Filtros",
+            "allWorkplaces": "Todos os locais",
+            "clear": "Limpar"
+        },
+        "mobilePanel": {
+            "empty": "Toque em um dia para ver os agendamentos"
+        },
+        "desktopPanel": {
+            "empty": "Selecione um dia no calendário para ver os agendamentos"
+        },
+        "dayPanel": {
+            "title": "Agendamentos",
+            "empty": "Nenhum agendamento para este dia.",
+            "client": "Cliente",
+            "workplace": "Local",
+            "status": "Status",
+            "edit": "Editar",
+            "cancel": "Cancelar"
+        },
+        "status": {
+            "scheduled": "Agendado",
+            "completed": "Realizado",
+            "canceled": "Cancelado"
+        },
+        "toast": {
+            "notifSuccess": "Preferências de notificação salvas com sucesso!"
+        }
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "greeting": "Olá, {{name}}!",
+        "greetingSubtitle": "Aqui está o resumo dos seus agendamentos.",
+        "stats": {
+            "total": "Total de Agendamentos",
+            "completed": "Realizados",
+            "canceled": "Cancelados",
+            "upcoming": "Próximos"
+        },
+        "charts": {
+            "statusTitle": "Status dos Agendamentos",
+            "noData": "Sem dados suficientes para exibir o gráfico."
+        },
+        "recentAppts": {
+            "title": "Agendamentos Mais Recentes",
+            "empty": "Nenhum agendamento recente encontrado."
+        }
+    },
+    "workplaces": {
+        "modal": {
+            "errorName": "O nome do local é obrigatório.",
+            "errorDays": "Selecione ao menos um dia de funcionamento.",
+            "errorSave": "Erro ao salvar local de trabalho.",
+            "createTitle": "Novo Local de Trabalho",
+            "upload": "Clique para enviar uma imagem",
+            "uploadDesc": "PNG, JPG, WEBP até 5MB",
+            "breakDesc": "Definir pausa ou almoço no expediente",
+            "active": "Ativo — visível na agenda",
+            "inactive": "Inativo — oculto da agenda",
+            "save": "Salvar alterações",
+            "create": "Criar local de trabalho",
+            "newTitle": "Novo Local de Trabalho",
+            "editTitle": "Editar Local de Trabalho",
+            "name": "Nome do local *",
+            "description": "Descrição",
+            "cep": "CEP",
+            "number": "Número",
+            "address": "Endereço (Auto-preenchido)",
+            "image": "Imagem do local",
+            "imageHint": "Clique para enviar uma imagem",
+            "imageTypes": "PNG, JPG, WEBP até 5MB",
+            "workDays": "Dias de funcionamento *",
+            "weekdays": "Dias Úteis",
+            "weekend": "Fim de Sem.",
+            "startTime": "Início (Expediente)",
+            "endTime": "Fim (Expediente)",
+            "addBreak": "Adicionar Intervalo",
+            "addBreakDesc": "Definir pausa ou almoço no expediente",
+            "breakStart": "Início do Intervalo",
+            "breakEnd": "Fim do Intervalo",
+            "holidays": "Trabalha em feriados",
+            "holidaysDesc": "Permitir agendamentos em dias de feriado",
+            "status": "Status do local",
+            "statusActive": "Ativo — visível na agenda",
+            "statusInactive": "Inativo — oculto da agenda",
+            "saveBtn": "Salvar alterações",
+            "createBtn": "Criar local de trabalho",
+            "errors": {
+                "nameRequired": "O nome do local é obrigatório.",
+                "daysRequired": "Selecione ao menos um dia de funcionamento.",
+                "defaultEdit": "Erro ao atualizar local de trabalho.",
+                "defaultCreate": "Erro ao criar local de trabalho."
+            }
+        },
+        "deleteModal": {
+            "cancel": "Cancelar",
+            "title": "Excluir Local",
+            "description": "Tem certeza que deseja excluir este local? Esta ação não pode ser desfeita.",
+            "confirm": "Excluir"
+        },
+        "card": {
+            "history": "Ver histórico do local",
+            "address": "Endereço",
+            "phone": "Telefone",
+            "clients": "Clientes",
+            "edit": "Editar local",
+            "delete": "Excluir",
+            "manage": "Acessar Pkg / Regras"
+        },
+        "status": {
+            "active": "Ativo",
+            "inactive": "Inativo"
+        },
+        "description": "Gerencie seus locais e organize sua agenda",
+        "sortItems": {
+            "nameAsc": "A → Z",
+            "nameDesc": "Z → A",
+            "newest": "Mais recente",
+            "oldest": "Mais antigo"
+        },
+        "noResults": {
+            "title": "Nenhum local encontrado",
+            "subtitle": "Tente outro termo de busca"
+        },
+        "title": "Meus Locais",
+        "searchPlaceholder": "Buscar local...",
+        "newWorkplace": "Novo Local",
+        "empty": {
+            "title": "Nenhum local de trabalho",
+            "description": "Você ainda não tem locais cadastrados. Crie seu primeiro local para começar a organizar sua agenda.",
+            "button": "Criar primeiro local"
+        },
+        "page": {
+            "back": "Voltar",
+            "searchClient": "Buscar cliente...",
+            "filter": "Filtros",
+            "newClient": "Novo Cliente",
+            "clientList": "Lista de Clientes",
+            "packageRules": "Pacotes e Regras",
+            "emptyClients": {
+                "title": "Nenhum cliente cadastrado",
+                "description": "Adicione seu primeiro cliente a este local de trabalho.",
+                "button": "Cadastrar primeiro cliente"
+            },
+            "clientCard": {
+                "active": "Ativo",
+                "inactive": "Inativo",
+                "history": "Ver histórico do cliente",
+                "copyMove": "Copiar / Mover para outro local",
+                "edit": "Editar cliente",
+                "delete": "Excluir cliente"
+            },
+            "filterModal": {
+                "title": "Filtros",
+                "statusLabel": "Status do cliente",
+                "all": "Todos",
+                "active": "Ativos",
+                "inactive": "Inativos",
+                "clear": "Limpar",
+                "apply": "Aplicar"
+            },
+            "clientModal": {
+                "newTitle": "Novo Cliente",
+                "editTitle": "Editar Cliente",
+                "name": "Nome *",
+                "namePlaceholder": "Nome do cliente",
+                "email": "E-mail",
+                "emailOptional": "(Opcional)",
+                "emailPlaceholder": "email@exemplo.com",
+                "emailHint": "Se preenchido, enviaremos confirmação de agendamento por e-mail.",
+                "contact": "Contato",
+                "contactPlaceholder": "Telefone ou e-mail",
+                "notes": "Observações",
+                "notesPlaceholder": "Notas adicionais...",
+                "status": "Status do cliente",
+                "statusActive": "Ativo — pode receber agendamentos",
+                "statusInactive": "Inativo — não aparece na seleção",
+                "saveBtn": "Salvar alterações",
+                "createBtn": "Cadastrar cliente",
+                "errors": {
+                    "nameRequired": "O nome do cliente é obrigatório.",
+                    "defaultEdit": "Erro ao atualizar cliente.",
+                    "defaultCreate": "Erro ao cadastrar cliente."
+                }
+            },
+            "copyMoveModal": {
+                "title": "Copiar / Mover Cliente",
+                "noContact": "Sem contato",
+                "targetLabel": "Local de destino *",
+                "targetPlaceholder": "Selecione o local",
+                "noOtherWorkplaces": "Nenhum outro local disponível",
+                "copy": "Copiar",
+                "move": "Mover",
+                "helpTextCopy": "Copiar — o cliente ficará nos dois locais.",
+                "helpTextMove": "Mover — o cliente será retirado deste local e enviado ao destino.",
+                "errors": {
+                    "targetRequired": "Selecione um local de destino.",
+                    "default": "Erro ao processar."
+                }
+            }
+        }
+    },
+    "notification": {
+        "appointmentNear": "🔔 Agendamento próximo!",
+        "in30min": "Em ~30 minutos",
+        "tomorrow": "Amanhã",
+        "in2days": "Em 2 dias",
+        "closeAll": "Fechar todas ({{count}})"
+    },
+    "searchableSelect": {
+        "search": "Buscar cliente...",
+        "placeholder": "Selecione o cliente",
+        "empty": "Nenhum cliente",
+        "notFound": "Nenhum cliente encontrado"
+    },
+    "settings": {
+        "title": "Configurações",
+        "theme": "Tema",
+        "dark": "Escuro",
+        "light": "Claro",
+        "language": "Idioma"
+    },
+    "dropdown": {
+        "user": "Usuário",
+        "profile": "Perfil",
+        "dashboard": "Dashboard",
+        "history": "Histórico",
+        "settings": "Configurações",
+        "logout": "Sair",
+        "client": "Cliente"
+    },
+    "cancellation": {
+        "invalidLink": "Link inválido. Nenhum token de cancelamento foi fornecido.",
+        "successMsg": "Agendamento cancelado com sucesso!",
+        "errorMsg": "Ocorreu um erro ao cancelar seu agendamento. Talvez o link tenha expirado.",
+        "processing": "Processando...",
+        "cancelled": "Cancelado",
+        "oops": "Ops!",
+        "loadingDesc": "Aguarde um momento enquanto cancelamos seu agendamento."
+    },
+    "status": {
+        "scheduled": "Agendado",
+        "confirmed": "Confirmado",
+        "completed": "Concluído",
+        "canceled": "Cancelado",
+        "rescheduled": "Reagendado"
+    },
+    "common": {
+        "back": "Voltar",
+        "filters": "Filtros",
+        "clear": "Limpar",
+        "all": "Todos",
+        "at": "às",
+        "locale": "pt-BR",
+        "tryAgain": "Tentar novamente",
+        "cancel": "Cancelar",
+        "delete": "Excluir",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "actives": "Ativos",
+        "inactives": "Inativos",
+        "apply": "Aplicar",
+        "optional": "(Opcional)",
+        "saveChanges": "Salvar alterações",
+        "createClient": "Cadastrar cliente",
+        "errorProcess": "Erro ao processar.",
+        "noContact": "Sem contato",
+        "copy": "Copiar",
+        "move": "Mover",
+        "newClient": "Novo cliente"
+    },
+    "history": {
+        "clientHistoryTitle": "Histórico de {{name}}",
+        "clientHistoryDesc": "Todos os atendimentos deste cliente",
+        "recordsCount": "{{count}} registros",
+        "dateFrom": "Data início",
+        "dateTo": "Data fim",
+        "noRecords": "Nenhum registro encontrado",
+        "noRecordsDesc": "Ajuste os filtros ou verifique os dados",
+        "workplace": "Local",
+        "date": "Data",
+        "calendarBtn": "Agenda",
+        "userHistoryTitle": "Meu Histórico",
+        "userHistoryDesc": "Todos os seus atendimentos em todos os locais",
+        "workplaceFilter": "Local de trabalho",
+        "allWorkplaces": "Todos os locais",
+        "filterPlaceholder": "Filtrar por cliente...",
+        "workplaceHistoryTitle": "Histórico — {{name}}",
+        "workplaceHistoryDesc": "Todos os atendimentos realizados neste local"
+    },
+    "confirmation": {
+        "invalidLink": "Link inválido. Nenhum token de confirmação foi fornecido.",
+        "successMsg": "Agendamento confirmado com sucesso!",
+        "errorMsg": "Ocorreu um erro ao confirmar seu agendamento. Talvez o link tenha expirado.",
+        "confirming": "Confirmando...",
+        "allGood": "Tudo certo!",
+        "oops": "Ops!",
+        "loadingDesc": "Aguarde um momento enquanto validamos seu agendamento."
+    },
+    "helvetica": "bold",
+    "metrics": {
+        "reportOf": "Relatório de:",
+        "generatedAt": "Gerado em:",
+        "topClients": "Clientes mais fiéis",
+        "position": "Posição",
+        "totalAppointments": "Total de Atendimentos",
+        "topWorkplacesTitlePdf": "Locais Mais Cheios",
+        "clientsCountTitle": "Qtd. de Clientes",
+        "longestAppointments": "Atendimentos mais longos",
+        "duration": "Duração",
+        "weekFrequency": "Frequência da semana",
+        "dayOfWeek": "Dia da Semana",
+        "timePeaks": "Picos de horário",
+        "timeRange": "Faixa Horária",
+        "appointmentsQty": "Qtd. Agendamentos",
+        "operationsSummary": "Resumo de Operações",
+        "appointmentMetric": "Métrica de Agendamento",
+        "accumulatedTotal": "Total Acumulado",
+        "canceledAppointments": "Atendimentos Cancelados",
+        "rescheduledAppointments": "Atendimentos Reagendados",
+        "confidentialFooter": "Velo - Documento Confidencial - Página {{page}} de {{total}}",
+        "appointmentsCount": "atendimentos",
+        "durationMin": "Duração (min)",
+        "metric": "Métrica",
+        "total": "Total: ",
+        "summary": "Resumo",
+        "loading": "Carregando dashboard...",
+        "error": "Falha ao carregar métricas.",
+        "overview": "Visão Geral",
+        "overviewDesc": "Métricas consolidadas da sua conta",
+        "exportPdf": "Exportar PDF",
+        "exportExcel": "Exportar Planilha",
+        "noData": "Nenhum dado encontrado.",
+        "topWorkplaces": "Locais mais cheios",
+        "clientsCount": "clientes",
+        "selectSlice": "Selecione uma fatia"
+    },
+    "success": "Foto removida!",
+    "error": "Senhas não coincidem",
+    "workplace": {
+        "card": {
+            "history": "Ver histórico do cliente",
+            "copyMove": "Copiar / Mover para outro local",
+            "edit": "Editar cliente",
+            "delete": "Excluir cliente"
+        },
+        "filters": {
+            "status": "Status do cliente"
+        },
+        "modal": {
+            "errorName": "O nome do cliente é obrigatório.",
+            "errorSave": "Erro ao salvar cliente.",
+            "editTitle": "Editar Cliente",
+            "createTitle": "Novo Cliente",
+            "name": "Nome *",
+            "namePlaceholder": "Nome do cliente",
+            "email": "E-mail",
+            "emailHint": "Se preenchido, enviaremos confirmação de agendamento por e-mail.",
+            "contact": "Contato",
+            "contactPlaceholder": "Telefone ou e-mail",
+            "notes": "Observações",
+            "notesPlaceholder": "Notas adicionais...",
+            "status": "Status do cliente",
+            "statusActive": "Ativo — pode receber agendamentos",
+            "statusInactive": "Inativo — não aparece na seleção"
+        },
+        "empty": {
+            "title": "Nenhum cliente cadastrado",
+            "desc": "Adicione seu primeiro cliente a este local de trabalho.",
+            "button": "Cadastrar primeiro cliente"
+        },
+        "copyMove": {
+            "errorTarget": "Selecione um local de destino.",
+            "title": "Copiar / Mover Cliente",
+            "targetLabel": "Local de destino *",
+            "targetPlaceholder": "Selecione o local",
+            "noTarget": "Nenhum outro local disponível",
+            "copyHint": "o cliente ficará nos dois locais.",
+            "moveHint": "o cliente será retirado deste local e enviado ao destino."
+        },
+        "back": "Voltar aos locais",
+        "subtitle": "Clientes deste local de trabalho",
+        "searchPlaceholder": "Buscar cliente por nome...",
+        "sort": {
+            "az": "A → Z",
+            "za": "Z → A",
+            "newest": "Mais recente",
+            "oldest": "Mais antigo"
+        },
+        "resultsCount": "{{count}} clientes encontrados",
+        "noResults": {
+            "title": "Nenhum cliente encontrado",
+            "desc": "Tente outro termo de busca ou ajuste os filtros"
+        },
+        "delete": {
+            "title": "Excluir cliente?",
+            "desc": "O cliente "
+        }
+    }
+}
