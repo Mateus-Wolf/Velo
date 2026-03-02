@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     HiOutlineArrowLeft,
     HiOutlineUsers,
@@ -29,11 +29,11 @@ export default function MetricsDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [activeSlice, setActiveSlice] = useState(null); // Para o hint do gráfico de PIZZA
     const [aiInsight, setAiInsight] = useState(null);
-    const [loadingInsight, setLoadingInsight] = useState(true);
+    const [loadingInsight, setLoadingInsight] = useState(false);
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
     useEffect(() => {
         fetchMetrics();
-        fetchAiInsight();
     }, []);
 
     const fetchMetrics = async () => {
@@ -58,6 +58,13 @@ export default function MetricsDashboardPage() {
             setAiInsight(null);
         } finally {
             setLoadingInsight(false);
+        }
+    };
+
+    const handleOpenAiModal = () => {
+        setIsAiModalOpen(true);
+        if (!aiInsight && !loadingInsight && !loading) {
+            fetchAiInsight();
         }
     };
 
@@ -403,6 +410,15 @@ export default function MetricsDashboardPage() {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
+                                onClick={handleOpenAiModal}
+                                className="flex items-center gap-2 rounded-xl border border-white/10 bg-gradient-to-r from-brand-600/80 to-accent-600/80 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-500/25 transition-all"
+                            >
+                                <HiSparkles size={18} />
+                                <span>{t('metrics.aiAssistantTitle', 'Assistente Velo IA')}</span>
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={exportToPDF}
                                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-surface-200/70 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 transition-all shadow-sm"
                             >
@@ -422,68 +438,86 @@ export default function MetricsDashboardPage() {
                     )}
                 </div>
 
-                {/* AI Insight Card */}
-                {metrics && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                        className="mb-8 relative overflow-hidden rounded-2xl p-[1px] group"
-                    >
-                        {/* Borda Gradiente Animada */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/40 via-accent-500/40 to-brand-500/40 opacity-50 group-hover:opacity-100 transition-opacity" />
-
-                        <div className="relative glass-strong h-full w-full rounded-2xl p-6 sm:p-8">
-                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-accent-600 shadow-lg shadow-brand-500/25">
-                                    <HiSparkles className="text-white" size={24} />
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <h3 className="text-lg font-bold text-surface-50 mb-1">{t('metrics.aiAssistantTitle', 'Assistente Velo IA')}</h3>
-                                    <p className="text-xs text-brand-400 mb-4">{t('metrics.aiAssistantSubtitle', 'Análise inteligente em tempo real')}</p>
-
-                                    {loadingInsight ? (
-                                        <div className="space-y-3 mt-2">
-                                            <div className="h-4 bg-white/10 rounded w-3/4 animate-pulse"></div>
-                                            <div className="h-4 bg-white/10 rounded w-full animate-pulse"></div>
-                                            <div className="h-4 bg-white/10 rounded w-5/6 animate-pulse"></div>
+                {/* AI Insight Modal */}
+                <AnimatePresence>
+                    {isAiModalOpen && (
+                        <motion.div
+                            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                        >
+                            <motion.div onClick={() => setIsAiModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 25 } }}
+                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl p-[1px] group"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-brand-500/40 via-accent-500/40 to-brand-500/40 opacity-100" />
+                                <div className="relative glass-strong h-full w-full rounded-2xl p-6 sm:p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
+                                    <div className="absolute top-4 right-4 z-20">
+                                        <button onClick={() => setIsAiModalOpen(false)} className="rounded-lg bg-white/5 p-2 text-surface-200/60 hover:bg-white/10 hover:text-white transition-all">
+                                            <HiOutlineXCircle size={24} />
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 relative z-10">
+                                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-accent-600 shadow-xl shadow-brand-500/30">
+                                            <HiSparkles className="text-white" size={28} />
                                         </div>
-                                    ) : aiInsight ? (
-                                        <div className="mt-2 text-sm leading-relaxed max-w-4xl">
-                                            {aiInsight.split('\\n').map((line, i) => {
-                                                const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ');
-                                                const rawText = isBullet ? line.trim().substring(2) : line;
-                                                const parts = rawText.split(/(\\**.*?\\**)/g);
+                                        <div className="flex-1 w-full mt-1 sm:mt-0 pr-6">
+                                            <h3 className="text-xl font-bold text-surface-50 mb-1">{t('metrics.aiAssistantTitle', 'Assistente Velo IA')}</h3>
+                                            <p className="text-sm text-brand-400 mb-6">{t('metrics.aiAssistantSubtitle', 'Análise inteligente em tempo real')}</p>
 
-                                                if (line.trim() === '') return <div key={i} className="h-2"></div>;
+                                            {loadingInsight ? (
+                                                <div className="space-y-4 mt-2">
+                                                    <div className="h-4 bg-white/10 rounded w-3/4 animate-pulse"></div>
+                                                    <div className="h-4 bg-white/10 rounded w-full animate-pulse"></div>
+                                                    <div className="h-4 bg-white/10 rounded w-5/6 animate-pulse"></div>
+                                                    <div className="h-4 bg-white/10 rounded w-1/2 animate-pulse mt-4"></div>
+                                                </div>
+                                            ) : aiInsight ? (
+                                                <div className="mt-2 text-base leading-relaxed max-w-4xl text-surface-200">
+                                                    {aiInsight.split('\\n').map((line, i) => {
+                                                        const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ');
+                                                        const rawText = isBullet ? line.trim().substring(2) : line;
+                                                        const parts = rawText.split(/(\*\*.*?\*\*)/g);
 
-                                                return (
-                                                    <div key={i} className={`mb-1.5 ${isBullet ? 'ml-4 flex items-start gap-2' : ''}`}>
-                                                        {isBullet && <span className="text-brand-400 mt-0.5 shrink-0">•</span>}
-                                                        <span className="text-surface-200/80">
-                                                            {parts.map((p, j) => {
-                                                                if (p.startsWith('**') && p.endsWith('**')) {
-                                                                    return <strong key={j} className="font-bold text-surface-50">{p.slice(2, -2)}</strong>;
-                                                                }
-                                                                if (p.startsWith('### ')) {
-                                                                    return <strong key={j} className="font-bold text-base text-surface-50 block mt-3 mb-1">{p.slice(4)}</strong>;
-                                                                }
-                                                                if (p.startsWith('## ')) {
-                                                                    return <strong key={j} className="font-bold text-lg text-surface-50 block mt-3 mb-1">{p.slice(3)}</strong>;
-                                                                }
-                                                                return <span key={j}>{p}</span>;
-                                                            })}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
+                                                        if (line.trim() === '') return <div key={i} className="h-3"></div>;
+
+                                                        return (
+                                                            <div key={i} className={`mb-2 ${isBullet ? 'ml-4 flex items-start gap-2.5' : ''}`}>
+                                                                {isBullet && <span className="text-brand-400 mt-0.5 shrink-0 text-lg">•</span>}
+                                                                <span className="text-surface-200">
+                                                                    {parts.map((p, j) => {
+                                                                        if (p.startsWith('**') && p.endsWith('**')) {
+                                                                            return <strong key={j} className="font-bold text-surface-50">{p.slice(2, -2)}</strong>;
+                                                                        }
+                                                                        if (p.startsWith('### ')) {
+                                                                            return <strong key={j} className="font-bold text-lg text-surface-50 block mt-4 mb-2">{p.slice(4)}</strong>;
+                                                                        }
+                                                                        if (p.startsWith('## ')) {
+                                                                            return <strong key={j} className="font-bold text-xl text-surface-50 block mt-5 mb-2">{p.slice(3)}</strong>;
+                                                                        }
+                                                                        return <span key={j}>{p}</span>;
+                                                                    })}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <p className="mt-4 text-sm font-medium text-red-400 bg-red-500/10 p-4 rounded-xl border border-red-500/20">
+                                                    {t('metrics.aiError', 'Não foi possível gerar os insights agora.')}
+                                                </p>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <p className="mt-2 text-sm text-surface-200/50">{t('metrics.aiError', 'Não foi possível gerar os insights agora.')}</p>
-                                    )}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {/* Top 3 Clientes */}
