@@ -47,12 +47,12 @@ def decode_access_token(token: str) -> Optional[dict]:
         return None
 
 
-def create_appointment_token(appointment_id: int, action: str, expires_delta: Optional[timedelta] = None) -> str:
+def create_appointment_token(appointment_id: int, action: str, token_version: int = 1, expires_delta: Optional[timedelta] = None) -> str:
     """Cria um token JWT para confirmação ou cancelamento de agendamento por email."""
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(days=3)  # Expira em 3 dias por padrão
     )
-    to_encode = {"sub": str(appointment_id), "action": action, "exp": expire, "type": "appointment"}
+    to_encode = {"sub": str(appointment_id), "action": action, "exp": expire, "type": "appointment", "tv": token_version}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 

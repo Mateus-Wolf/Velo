@@ -16,6 +16,7 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import CancellationPage from './pages/CancellationPage';
 import GlobalLoading from './components/GlobalLoading';
 import GeminiChatbot from './components/GeminiChatbot';
+import PendingAppointmentsPage from './pages/PendingAppointmentsPage';
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -153,6 +154,17 @@ export default function App() {
               <ProtectedRoute>
                 <AnimatedPage>
                   <UserHistoryPage />
+                </AnimatedPage>
+              </ProtectedRoute>
+            }
+          />
+          {/* Pending Appointments */}
+          <Route
+            path="/pendentes"
+            element={
+              <ProtectedRoute>
+                <AnimatedPage>
+                  <PendingAppointmentsPage />
                 </AnimatedPage>
               </ProtectedRoute>
             }

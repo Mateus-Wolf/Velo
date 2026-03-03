@@ -18,8 +18,10 @@ const getStatusMap = (t) => ({
     scheduled: { label: t('status.scheduled', 'Agendado'), color: 'bg-blue-500/15 text-blue-400 border-blue-500/20' },
     confirmed: { label: t('status.confirmed', 'Confirmado'), color: 'bg-emerald-400/15 text-emerald-400 border-emerald-400/20' },
     completed: { label: t('status.completed', 'Concluído'), color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
-    canceled: { label: t('status.canceled', 'Cancelado'), color: 'bg-red-500/15 text-red-400 border-red-500/20' },
-    rescheduled: { label: t('status.rescheduled', 'Reagendado'), color: 'bg-amber-500/15 text-amber-400 border-amber-500/20' },
+    pending: { label: t('status.pending', 'Pendente'), color: 'bg-amber-500/15 text-amber-400 border-amber-500/20' },
+    canceled_client: { label: t('status.canceledClient', 'Canc. Cliente'), color: 'bg-red-500/15 text-red-400 border-red-500/20' },
+    canceled_user: { label: t('status.canceledUser', 'Cancelado'), color: 'bg-red-500/15 text-red-400 border-red-500/20' },
+    no_show: { label: t('status.noShow', 'Não Compareceu'), color: 'bg-gray-500/15 text-gray-400 border-gray-500/20' },
 });
 
 export default function WorkplaceHistoryPage() {
@@ -142,7 +144,7 @@ export default function WorkplaceHistoryPage() {
                                 <div className="glass rounded-xl p-4 space-y-4 mb-4">
                                     {/* Status */}
                                     <div className="flex flex-wrap gap-2">
-                                        {['all', 'scheduled', 'confirmed', 'completed', 'canceled', 'rescheduled'].map((s) => (
+                                        {['all', 'scheduled', 'confirmed', 'completed', 'pending', 'canceled_client', 'canceled_user', 'no_show'].map((s) => (
                                             <button
                                                 key={s}
                                                 onClick={() => setFilterStatus(s)}
@@ -245,9 +247,16 @@ export default function WorkplaceHistoryPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <span className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium border ${st.color}`}>
-                                            {st.label}
-                                        </span>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            {a.rescheduled && (
+                                                <span className="rounded-lg px-2 py-1 text-[10px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/20">
+                                                    ↻ Reag.
+                                                </span>
+                                            )}
+                                            <span className={`rounded-lg px-2.5 py-1 text-xs font-medium border ${st.color}`}>
+                                                {st.label}
+                                            </span>
+                                        </div>
                                     </div>
                                 </motion.div>
                             );

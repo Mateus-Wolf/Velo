@@ -17,6 +17,7 @@ import { HiSparkles } from 'react-icons/hi2';
 import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
+import UserDropdown from '../components/UserDropdown';
 
 /* ------------------------------------------------------------------ */
 /*  Floating Orbs                                                      */
@@ -226,16 +227,19 @@ export default function ProfilePage() {
             <FloatingOrbs />
 
             {/* Header */}
-            <header className="relative z-10 border-b border-white/5 bg-surface-950/60 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
-                    <button onClick={() => navigate('/')}
-                        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-surface-200/70 hover:bg-white/10 hover:text-white transition-all">
-                        <HiOutlineArrowLeft size={16} /> Voltar
-                    </button>
-                    <div>
-                        <h1 className="text-lg font-bold text-gradient">{t('profile.title')}</h1>
-                        <p className="text-xs text-surface-200/40">Gerencie suas informações</p>
+            <header className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">
+                <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => navigate('/')}
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-surface-200/70 hover:bg-white/10 hover:text-white transition-all">
+                            <HiOutlineArrowLeft size={16} />
+                        </button>
+                        <div>
+                            <h1 className="text-lg font-bold text-gradient">{t('profile.title')}</h1>
+                            <p className="text-xs text-surface-200/40">Gerencie suas informações</p>
+                        </div>
                     </div>
+                    <UserDropdown />
                 </div>
             </header>
 

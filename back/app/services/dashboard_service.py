@@ -7,6 +7,9 @@ from app.models.appointment import Appointment
 from app.models.workplace import Workplace
 from app.models.workplace_client import WorkplaceClient
 
+# Status que devem ser excluídos de métricas de performance
+EXCLUDED_STATUSES = ["canceled_client", "canceled_user", "no_show"]
+
 def get_dashboard_metrics(db: Session, user_id: int):
     # Top 3 clientes que mais vão
     top_clients = (
@@ -16,7 +19,7 @@ def get_dashboard_metrics(db: Session, user_id: int):
             func.count(Appointment.id).label("appointment_count")
         )
         .join(Appointment, Client.id == Appointment.client_id)
-        .filter(Appointment.user_id == user_id, Appointment.status != 'canceled')
+        .filter(Appointment.user_id == user_id, ~Appointment.status.in_(EXCLUDED_STATUSES))
         .group_by(Client.id)
         .order_by(desc("appointment_count"))
         .limit(3)
@@ -34,7 +37,7 @@ def get_dashboard_metrics(db: Session, user_id: int):
             ).label("duration_seconds")
         )
         .join(Client, Appointment.client_id == Client.id)
-        .filter(Appointment.user_id == user_id, Appointment.status != 'canceled')
+        .filter(Appointment.user_id == user_id, ~Appointment.status.in_(EXCLUDED_STATUSES))
         .order_by(desc("duration_seconds"))
         .limit(3)
         .all()
@@ -66,13 +69,12 @@ def get_dashboard_metrics(db: Session, user_id: int):
     )
 
     # Gráfico dia da semana
-    # PostgreSQL extract('dow', date) returns 0 for Sunday to 6 for Saturday
     appointments_by_dow = (
         db.query(
             extract('dow', Appointment.date).label('day_num'),
             func.count(Appointment.id).label('app_count')
         )
-        .filter(Appointment.user_id == user_id, Appointment.status != 'canceled')
+        .filter(Appointment.user_id == user_id, ~Appointment.status.in_(EXCLUDED_STATUSES))
         .group_by(extract('dow', Appointment.date))
         .all()
     )
@@ -88,18 +90,16 @@ def get_dashboard_metrics(db: Session, user_id: int):
     formatted_days = [{"day_name": k, "count": v} for k, v in days_data.items()]
 
     # Gráfico de horários
-    # Extrai só a hora do tempo de início para agrupar
     appointments_by_hour = (
         db.query(
             extract('hour', Appointment.start_time).label('hour'),
             func.count(Appointment.id).label('app_count')
         )
-        .filter(Appointment.user_id == user_id, Appointment.status != 'canceled')
+        .filter(Appointment.user_id == user_id, ~Appointment.status.in_(EXCLUDED_STATUSES))
         .group_by(extract('hour', Appointment.start_time))
         .all()
     )
     
-    # Agrupa por períodos em listas ordenadas de strings para o gráfico
     time_data = {
         "06h-09h": 0,
         "09h-12h": 0,
@@ -117,17 +117,125 @@ def get_dashboard_metrics(db: Session, user_id: int):
         
     formatted_times = [{"time_range": k, "count": v} for k, v in time_data.items()]
 
-    # Canceled count
-    canceled_count = db.query(Appointment).filter(
+    # ----- Contagens por status -----
+    canceled_client_count = db.query(Appointment).filter(
         Appointment.user_id == user_id, 
-        Appointment.status == 'canceled'
+        Appointment.status == 'canceled_client'
     ).count()
 
-    # Rescheduled count
+    canceled_user_count = db.query(Appointment).filter(
+        Appointment.user_id == user_id, 
+        Appointment.status == 'canceled_user'
+    ).count()
+
+    no_show_count = db.query(Appointment).filter(
+        Appointment.user_id == user_id, 
+        Appointment.status == 'no_show'
+    ).count()
+
+    completed_count = db.query(Appointment).filter(
+        Appointment.user_id == user_id, 
+        Appointment.status == 'completed'
+    ).count()
+
+    pending_count = db.query(Appointment).filter(
+        Appointment.user_id == user_id, 
+        Appointment.status == 'pending'
+    ).count()
+
     rescheduled_count = db.query(Appointment).filter(
         Appointment.user_id == user_id, 
-        Appointment.status == 'rescheduled'
+        Appointment.rescheduled == True
     ).count()
+
+    # ---- Métricas Financeiras ----
+    from datetime import date, timedelta
+    from dateutil.relativedelta import relativedelta
+
+    # Receita total (apenas agendamentos concluídos com preço)
+    total_revenue_result = db.query(
+        func.coalesce(func.sum(Appointment.price), 0)
+    ).filter(
+        Appointment.user_id == user_id,
+        Appointment.status == 'completed',
+        Appointment.price.isnot(None),
+    ).scalar()
+    total_revenue = float(total_revenue_result) if total_revenue_result else 0.0
+
+    # Ticket médio (apenas concluídos)
+    avg_ticket_result = db.query(
+        func.avg(Appointment.price)
+    ).filter(
+        Appointment.user_id == user_id,
+        Appointment.status == 'completed',
+        Appointment.price.isnot(None),
+        Appointment.price > 0,
+    ).scalar()
+    avg_ticket = round(float(avg_ticket_result), 2) if avg_ticket_result else 0.0
+
+    # Total de agendamentos concluídos com preço preenchido
+    total_priced_appointments = db.query(Appointment).filter(
+        Appointment.user_id == user_id,
+        Appointment.status == 'completed',
+        Appointment.price.isnot(None),
+        Appointment.price > 0,
+    ).count()
+
+    # Receita mensal (últimos 6 meses)
+    today = date.today()
+    six_months_ago = today - relativedelta(months=5)
+    first_day = six_months_ago.replace(day=1)
+
+    monthly_revenue_rows = (
+        db.query(
+            extract('year', Appointment.date).label('yr'),
+            extract('month', Appointment.date).label('mo'),
+            func.coalesce(func.sum(Appointment.price), 0).label('revenue'),
+        )
+        .filter(
+            Appointment.user_id == user_id,
+            Appointment.status == 'completed',
+            Appointment.price.isnot(None),
+            Appointment.date >= first_day,
+        )
+        .group_by('yr', 'mo')
+        .order_by('yr', 'mo')
+        .all()
+    )
+
+    month_names = {1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
+                   7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'}
+
+    monthly_lookup = {(int(r.yr), int(r.mo)): float(r.revenue) for r in monthly_revenue_rows}
+    monthly_revenue = []
+    cursor = first_day
+    for _ in range(6):
+        y, m = cursor.year, cursor.month
+        monthly_revenue.append({
+            "month": f"{month_names[m]}/{str(y)[-2:]}",
+            "revenue": monthly_lookup.get((y, m), 0.0),
+        })
+        cursor += relativedelta(months=1)
+
+    # Top 3 clientes por receita (apenas concluídos)
+    top_clients_revenue = (
+        db.query(
+            Client.name.label("client_name"),
+            func.sum(Appointment.price).label("total_revenue"),
+            func.count(Appointment.id).label("appointment_count"),
+        )
+        .join(Appointment, Client.id == Appointment.client_id)
+        .filter(
+            Appointment.user_id == user_id,
+            Appointment.status == 'completed',
+            Appointment.price.isnot(None),
+            Appointment.price > 0,
+        )
+        .group_by(Client.id)
+        .order_by(desc("total_revenue"))
+        .limit(3)
+        .all()
+    )
 
     return {
         "top_clients": [
@@ -141,6 +249,18 @@ def get_dashboard_metrics(db: Session, user_id: int):
         ],
         "appointments_by_day": formatted_days,
         "appointments_by_time": formatted_times,
-        "canceled_count": canceled_count,
-        "rescheduled_count": rescheduled_count
+        "canceled_client_count": canceled_client_count,
+        "canceled_user_count": canceled_user_count,
+        "no_show_count": no_show_count,
+        "completed_count": completed_count,
+        "pending_count": pending_count,
+        "rescheduled_count": rescheduled_count,
+        "total_revenue": total_revenue,
+        "avg_ticket": avg_ticket,
+        "total_priced_appointments": total_priced_appointments,
+        "monthly_revenue": monthly_revenue,
+        "top_clients_revenue": [
+            {"client_name": c.client_name, "total_revenue": float(c.total_revenue), "appointment_count": c.appointment_count}
+            for c in top_clients_revenue
+        ],
     }

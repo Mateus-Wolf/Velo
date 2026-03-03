@@ -16,10 +16,19 @@ class Appointment(Base):
     end_time = sa.Column(sa.Time, nullable=False)
     recurrence_id = sa.Column(sa.String(50), nullable=True, index=True, doc="UUID agrupando consultas recorrentes")
     status = sa.Column(
-        sa.String(20),
+        sa.String(30),
         nullable=False,
         default="scheduled",
-        doc="Valores: scheduled, canceled, completed, confirmed, rescheduled",
+        doc="Valores: scheduled, confirmed, completed, pending, canceled_client, canceled_user, no_show",
+    )
+    rescheduled = sa.Column(
+        sa.Boolean, nullable=False, default=False,
+        doc="Flag indicando que a data/hora foi alterada. Resetado após confirmação.",
+    )
+    price = sa.Column(sa.Numeric(10, 2), nullable=True, doc="Preço estimado do atendimento")
+    confirmation_token_version = sa.Column(
+        sa.Integer, nullable=False, default=1,
+        doc="Versão do token de confirmação; incrementada ao alterar preço antes de confirmar",
     )
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=sa.func.now())
 

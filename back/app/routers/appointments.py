@@ -74,3 +74,14 @@ def cancel_appointment(
 ):
     """Cancela um agendamento (opcionalmente cancelando os futuros da recorrência)."""
     return appointment_service.cancel_appointment(db, appointment_id, current_user.id, cancel_all_future)
+
+
+@router.patch("/{appointment_id}/resolve", response_model=AppointmentResponse)
+def resolve_appointment(
+    appointment_id: int,
+    new_status: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Resolve um agendamento pendente (completed, no_show, canceled_user)."""
+    return appointment_service.resolve_appointment(db, appointment_id, current_user.id, new_status)

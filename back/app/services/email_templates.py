@@ -271,8 +271,18 @@ def appointment_confirmation_request_html(
     workplace_name: str,
     confirm_url: str,
     cancel_url: str,
+    price: str = None,
 ) -> str:
     """Gera HTML para solicitar confirmação de agendamento ao cliente."""
+
+    price_row = ""
+    if price:
+        price_row = f"""
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">💰 Valor Estimado</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{price}</td>
+                        </tr>
+        """
 
     return f"""
     <!DOCTYPE html>
@@ -311,6 +321,7 @@ def appointment_confirmation_request_html(
                             <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">📍 Local</td>
                             <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{workplace_name}</td>
                         </tr>
+                        {price_row}
                     </table>
                 </div>
 
@@ -351,8 +362,18 @@ def appointment_rescheduled_request_html(
     workplace_name: str,
     confirm_url: str,
     cancel_url: str,
+    price: str = None,
 ) -> str:
     """Gera HTML para alertar sobre reagendamento e solicitar confirmação."""
+
+    price_row = ""
+    if price:
+        price_row = f"""
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">💰 Valor Estimado</td>
+                            <td style="padding: 6px 0; font-size: 15px; color: #111827; font-weight: 700;">{price}</td>
+                        </tr>
+        """
 
     return f"""
     <!DOCTYPE html>
@@ -394,6 +415,7 @@ def appointment_rescheduled_request_html(
                             <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">📍 Local</td>
                             <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{workplace_name}</td>
                         </tr>
+                        {price_row}
                     </table>
                 </div>
 
@@ -404,6 +426,97 @@ def appointment_rescheduled_request_html(
                 <div style="text-align: center; margin-top: 24px;">
                     <a href="{confirm_url}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-right: 10px; font-size: 15px;">
                         ✅ Confirmar Novo Horário
+                    </a>
+                    <a href="{cancel_url}" style="display: inline-block; background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                        ❌ Cancelar Agendamento
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f9fafb; border-radius: 0 0 16px 16px; padding: 20px 24px; text-align: center; border: 1px solid #e5e7eb; border-top: none;">
+                <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                    Este email foi enviado automaticamente pelo MindFlow.<br>
+                    Por favor, não responda a este email.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+def appointment_price_changed_html(
+    client_name: str,
+    professional_name: str,
+    time: str,
+    date: str,
+    workplace_name: str,
+    old_price: str,
+    new_price: str,
+    confirm_url: str,
+    cancel_url: str,
+) -> str:
+    """Gera HTML para alertar sobre mudança de preço e solicitar nova confirmação."""
+
+    old_price_text = old_price if old_price else "Não informado"
+    new_price_text = new_price if new_price else "Não informado"
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); border-radius: 16px 16px 0 0; padding: 32px 24px; text-align: center;">
+                <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                    💰 Atualização de Valor
+                </h1>
+            </div>
+
+            <!-- Body -->
+            <div style="background-color: white; padding: 32px 24px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 24px; font-size: 16px; color: #111827; line-height: 1.7;">
+                    Olá, <strong>{client_name}</strong>. O valor estimado do seu agendamento com 
+                    <strong>{professional_name}</strong> foi atualizado. Por favor, confirme novamente.
+                </p>
+
+                <div style="background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%); border-radius: 12px; padding: 20px; border: 1px solid #c7d2fe; margin-bottom: 24px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280; width: 120px;">📅 Data</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{date}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">🕐 Horário</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{time}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">📍 Local</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{workplace_name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">💰 Valor Anterior</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #ef4444; font-weight: 600; text-decoration: line-through;">{old_price_text}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">💰 Novo Valor</td>
+                            <td style="padding: 6px 0; font-size: 16px; color: #10b981; font-weight: 700;">{new_price_text}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p style="margin: 0 0 16px; font-size: 15px; color: #4b5563; text-align: center;">
+                    Como o valor foi alterado, precisamos de uma nova confirmação. Links anteriores foram desativados.
+                </p>
+
+                <div style="text-align: center; margin-top: 24px;">
+                    <a href="{confirm_url}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-right: 10px; font-size: 15px;">
+                        ✅ Confirmar Agendamento
                     </a>
                     <a href="{cancel_url}" style="display: inline-block; background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
                         ❌ Cancelar Agendamento

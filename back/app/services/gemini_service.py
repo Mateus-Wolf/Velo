@@ -230,29 +230,73 @@ def generate_dashboard_insights(db: Session, current_user: User) -> str:
     top_workplaces = [f"{w['workplace_name']} ({w['client_count']} clientes)" for w in metrics['top_workplaces']]
     week_freq = [f"{d['day_name']}: {d['count']}" for d in metrics['appointments_by_day']]
     time_peaks = [f"{t['time_range']}: {t['count']}" for t in metrics['appointments_by_time']]
+
+    # Financeiro
+    def fmt_brl(v):
+        return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    monthly_rev = [f"{m['month']}: {fmt_brl(m['revenue'])}" for m in metrics.get('monthly_revenue', [])]
+    top_rev = [f"{c['client_name']} ({fmt_brl(c['total_revenue'])}, {c['appointment_count']} atendimentos)" for c in metrics.get('top_clients_revenue', [])]
     
     resumo_texto = f"""
     Métricas recentes de {current_user.name}:
-    - Agendamentos cancelados: {metrics['canceled_count']}
+    - Cancelados pelo cliente: {metrics['canceled_client_count']}
+    - Cancelados pelo usuário: {metrics['canceled_user_count']}
+    - Não compareceram: {metrics['no_show_count']}
+    - Concluídos: {metrics['completed_count']}
+    - Pendentes: {metrics['pending_count']}
     - Reagendamentos: {metrics['rescheduled_count']}
     - Locais mais movimentados: {', '.join(top_workplaces) if top_workplaces else 'Nenhum por enquanto'}
     - Frequência na semana: {', '.join(week_freq) if week_freq else 'Nenhuma'}
     - Picos de horário: {', '.join(time_peaks) if time_peaks else 'Nenhum'}
+
+    Dados Financeiros:
+    - Receita total (atendimentos concluídos): {fmt_brl(metrics.get('total_revenue', 0))}
+    - Ticket médio por atendimento: {fmt_brl(metrics.get('avg_ticket', 0))}
+    - Agendamentos concluídos com preço: {metrics.get('total_priced_appointments', 0)}
+    - Receita mensal (últimos 6 meses): {', '.join(monthly_rev) if monthly_rev else 'Nenhum dado'}
+    - Top clientes por receita: {', '.join(top_rev) if top_rev else 'Nenhum dado'}
     """
     
     prompt = f"""
-Você é o Assistente Virtual (Consultor de Negócios) do sistema de agendamentos "Velo".
-Seu papel agora não é agendar ou buscar conversas, mas sim analisar o desempenho do negócio do usuário e dar uma DICA acionável e um INSIGHT.
-Seja conciso, inspirador e estratégico no tom de voz. 
-Se os dados estiverem zerados ou muito baixos, incentive o usuário a compartilhar o seu link de agendamento na Bio das redes sociais.
+Você é o Consultor de Negócios do sistema Velo. Seu objetivo é analisar o desempenho do usuário e fornecer um INSIGHT estruturado e altamente profissional. Vá direto ao ponto, não faça longas introduções.
 
-Analise estritamente este mini-relatório:
+Dados recentes do negócio:
 {resumo_texto}
 
-Regras de formatação (OBRIGATÓRIO):
-- Retorne apenas texto (Use formatação Markdown leve: negrito para destaques e emojis).
-- Não use títulos H1 grandes (ex: # Título), use apenas **negrito** ou no máximo H3 (###).
-- Estrutura sugerida: Um pequeno parágrafo de análise + 1 ou 2 bullet points rápidos com dicas do que o profissional pode melhorar ou aproveitar de bom.
+Formate a sua resposta em TÓPICOS específicos. Use a seguinte estrutura OBRIGATÓRIA (com Markdown):
+
+### 📊 Desempenho Geral
+(Análise rápida em 1 a 2 frases).
+
+### 📋 Análise de Status
+- Taxa de conclusão (concluídos vs total) — bom ou precisa melhorar?
+- Cancelamentos: compare cliente vs usuário. Se cancelamentos pelo cliente são altos, sugira melhorias (lembretes, comunicação).
+- Não comparecimentos: se alto, sugira ações (confirmação prévia, política de no-show).
+- Pendentes: se existem muitos, alerte para resolver e evitar acúmulo.
+
+### 💰 Análise Financeira
+- Análise da receita total e ticket médio (compare com o potencial)
+- Tendência mensal (crescimento ou queda?)
+- Clientes que mais geram receita
+
+### 🔥 Pontos Fortes
+- Ponto positivo 1 (seja conciso)
+- Ponto positivo 2 (seja conciso)
+
+### ⚠️ Pontos de Atenção (O que pode Melhorar)
+- Dica de melhoria 1 (foco nos cancelamentos, horários vazios e oportunidades financeiras)
+- Dica de melhoria 2
+
+### 💡 Plano de Ação Imediato
+- Dica final acionável que o profissional possa fazer hoje (Exemplo: compartilhar o link na Bio do Instagram, enviar uma mensagem aos clientes, ajustar preços).
+
+Regras de Formatação:
+- Respeite fielmente os tópicos acima.
+- Mantenha bullet points (`- `).
+- Use **negrito** nas palavras mais importantes para facilitar a leitura rápida.
+- Seja amigável e profissional, usando tom encorajador acompanhado de emojis pontuais.
+- Se os dados financeiros estiverem zerados, mencione brevemente que o recurso de preço foi adicionado recentemente e incentive o uso.
 """
     try:
         response = gemini_client.models.generate_content(

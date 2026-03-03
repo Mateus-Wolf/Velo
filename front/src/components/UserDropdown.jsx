@@ -8,6 +8,7 @@ import {
     HiOutlineLogout,
     HiOutlineChevronDown,
     HiOutlineCog,
+    HiOutlineClock,
 } from 'react-icons/hi';
 import useAuthStore from '../store/useAuthStore';
 import SettingsModal from './SettingsModal';
@@ -19,6 +20,7 @@ export default function UserDropdown() {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
     const ref = useRef(null);
 
     const firstName = user?.name?.split(' ')[0] || t('dropdown.user', 'Usuário');
@@ -30,6 +32,18 @@ export default function UserDropdown() {
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // Fetch pending count
+    useEffect(() => {
+        const fetchPending = async () => {
+            try {
+                const api = (await import('../services/api')).default;
+                const res = await api.get('/appointments/', { params: { appointment_status: 'pending' } });
+                setPendingCount(res.data.length);
+            } catch { /* silently ignore */ }
+        };
+        fetchPending();
     }, []);
 
     return (
@@ -88,6 +102,20 @@ export default function UserDropdown() {
                             >
                                 <HiOutlineClipboardList size={16} />
                                 {t('dropdown.history', 'Histórico')}
+                            </button>
+
+                            {/* Pendentes */}
+                            <button
+                                onClick={() => { setOpen(false); navigate('/pendentes'); }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-surface-200/70 hover:bg-amber-500/10 hover:text-amber-300 transition-colors"
+                            >
+                                <HiOutlineClock size={16} />
+                                <span className="flex-1 text-left">{t('dropdown.pending', 'Pendentes')}</span>
+                                {pendingCount > 0 && (
+                                    <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                        {pendingCount}
+                                    </span>
+                                )}
                             </button>
 
                             {/* Configurações */}

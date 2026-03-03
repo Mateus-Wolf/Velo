@@ -35,14 +35,22 @@ const MONTH_NAMES = [
 const STATUS_MAP = {
     scheduled: { bg: 'bg-brand-500/20', text: 'text-brand-300', border: 'border-brand-500/30', label: 'Agendado', dot: 'bg-brand-400' },
     confirmed: { bg: 'bg-emerald-400/20', text: 'text-emerald-400', border: 'border-emerald-400/30', label: 'Confirmado', dot: 'bg-emerald-400' },
-    rescheduled: { bg: 'bg-amber-500/20', text: 'text-amber-300', border: 'border-amber-500/30', label: 'Reagendado', dot: 'bg-amber-400' },
     completed: { bg: 'bg-emerald-500/20', text: 'text-emerald-300', border: 'border-emerald-500/30', label: 'Concluído', dot: 'bg-emerald-400' },
-    canceled: { bg: 'bg-red-500/20', text: 'text-red-300', border: 'border-red-500/30', label: 'Cancelado', dot: 'bg-red-400' },
+    pending: { bg: 'bg-amber-500/20', text: 'text-amber-300', border: 'border-amber-500/30', label: 'Pendente', dot: 'bg-amber-400' },
+    canceled_client: { bg: 'bg-red-500/20', text: 'text-red-300', border: 'border-red-500/30', label: 'Canc. pelo Cliente', dot: 'bg-red-400' },
+    canceled_user: { bg: 'bg-red-500/20', text: 'text-red-300', border: 'border-red-500/30', label: 'Cancelado', dot: 'bg-red-400' },
+    no_show: { bg: 'bg-gray-500/20', text: 'text-gray-300', border: 'border-gray-500/30', label: 'Não Compareceu', dot: 'bg-gray-400' },
 };
+
+const TERMINAL_STATUSES = ['canceled_client', 'canceled_user', 'no_show', 'completed'];
 
 function fmtTime(t) { return t ? t.substring(0, 5) : ''; }
 function pad(n) { return String(n).padStart(2, '0'); }
 function dKey(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function fmtPrice(v) {
+    if (v == null || v === '' || v === 0) return null;
+    return `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Confirm Cancel Dialog                                              */
@@ -244,7 +252,7 @@ function NotificationsModal({ isOpen, onClose, onSaved }) {
 /* ------------------------------------------------------------------ */
 function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workplaces }) {
     const { t } = useTranslation();
-    const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '', end_time: '' });
+    const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '', end_time: '', price: '' });
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -267,6 +275,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                 date: appointment.date,
                 start_time: fmtTime(appointment.start_time),
                 end_time: fmtTime(appointment.end_time),
+                price: appointment.price != null ? String(appointment.price) : '',
             });
             setIsRecurring(!!appointment.is_recurring);
             setRecurrenceType(appointment.recurrence_type || 'weekly');
@@ -317,6 +326,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                 date: form.date,
                 start_time: form.start_time,
                 end_time: form.end_time,
+                price: form.price ? parseFloat(form.price) : null,
                 is_recurring: isRecurring,
                 recurrence_type: isRecurring ? recurrenceType : null,
                 recurrence_value: isRecurring ? recurrenceValue : null,
@@ -413,6 +423,23 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                                 </div>
                             </div>
 
+                            {/* Preço */}
+                            <div>
+                                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-surface-200/70">
+                                    💰 {t('calendar.modals.edit.price', 'Preço estimado')}
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-surface-200/40 font-medium">R$</span>
+                                    <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update('price', e.target.value)}
+                                        disabled={appointment?.status === 'confirmed'}
+                                        placeholder="0,00"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed" />
+                                </div>
+                                {appointment?.status === 'confirmed' && (
+                                    <p className="mt-1.5 text-xs text-amber-400/80">🔒 {t('calendar.modals.edit.priceLocked', 'O preço não pode ser alterado após confirmação do cliente.')}</p>
+                                )}
+                            </div>
+
                             <div className="pt-2 border-t border-white/10">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -486,7 +513,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
 /* ------------------------------------------------------------------ */
 function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, selectedDate }) {
     const { t } = useTranslation();
-    const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '09:00', end_time: '10:00' });
+    const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '09:00', end_time: '10:00', price: '' });
     const [isRecurring, setIsRecurring] = useState(false);
     const [recurrenceType, setRecurrenceType] = useState('weekly');
     const [recurrenceValue, setRecurrenceValue] = useState('1');
@@ -550,6 +577,7 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                 date: form.date,
                 start_time: form.start_time,
                 end_time: form.end_time,
+                price: form.price ? parseFloat(form.price) : null,
                 is_recurring: isRecurring,
                 recurrence_type: isRecurring ? recurrenceType : null,
                 recurrence_value: isRecurring ? recurrenceValue : null,
@@ -637,6 +665,19 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                                     <label className="mb-2 text-sm font-medium text-surface-200/70 block">{t('calendar.modals.create.end', 'Fim *')}</label>
                                     <input type="time" value={form.end_time} onChange={(e) => update('end_time', e.target.value)}
                                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+                                </div>
+                            </div>
+
+                            {/* Preço */}
+                            <div>
+                                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-surface-200/70">
+                                    💰 {t('calendar.modals.create.price', 'Preço estimado')}
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-surface-200/40 font-medium">R$</span>
+                                    <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update('price', e.target.value)}
+                                        placeholder="0,00"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
                                 </div>
                             </div>
 
@@ -743,7 +784,7 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
                 <div className="space-y-3">
                     {dayAppts.map((a) => {
                         const st = STATUS_MAP[a.status] || STATUS_MAP.scheduled;
-                        const isCanceled = a.status === 'canceled';
+                        const isTerminal = TERMINAL_STATUSES.includes(a.status);
                         return (
                             <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                                 className={`rounded-xl border ${st.border} ${st.bg} p-3.5`}
@@ -752,7 +793,14 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
                                     <span className="text-xs font-medium text-surface-200/50">
                                         {fmtTime(a.start_time)} – {fmtTime(a.end_time)}
                                     </span>
-                                    <span className={`text-xs font-semibold ${st.text} px-2 py-0.5 rounded-full ${st.bg}`}>{st.label}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        {a.rescheduled && (
+                                            <span className="text-[10px] font-semibold text-amber-300 px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30">
+                                                ↻ Reagendado
+                                            </span>
+                                        )}
+                                        <span className={`text-xs font-semibold ${st.text} px-2 py-0.5 rounded-full ${st.bg}`}>{st.label}</span>
+                                    </div>
                                 </div>
                                 <p className="text-sm font-medium text-surface-50">
                                     {a.client_name || `${t('calendar.dayPanel.client', 'Cliente')} #${a.client_id}`}
@@ -760,9 +808,14 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
                                 <p className="text-sm font-medium text-surface-200/70 mt-0.5">
                                     {workplaceMap[a.workplace_id] || `${t('calendar.dayPanel.workplace', 'Local')} #${a.workplace_id}`}
                                 </p>
+                                {fmtPrice(a.price) && (
+                                    <p className="text-sm font-semibold text-emerald-400 mt-1">
+                                        {fmtPrice(a.price)}
+                                    </p>
+                                )}
 
-                                {/* Action buttons */}
-                                {!isCanceled && (
+                                {/* Action buttons - only for active statuses */}
+                                {!isTerminal && (
                                     <div className="flex gap-2 mt-3 pt-2.5 border-t border-white/5">
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
@@ -1363,7 +1416,7 @@ export default function CalendarPage() {
                                                 <div className="flex-1 border-l border-white/[0.03] p-1.5 space-y-1">
                                                     {hourAppts.map((a) => {
                                                         const st = STATUS_MAP[a.status] || STATUS_MAP.scheduled;
-                                                        const isCanceled = a.status === 'canceled';
+                                                        const isTerminal = TERMINAL_STATUSES.includes(a.status);
                                                         return (
                                                             <motion.div key={a.id}
                                                                 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
@@ -1376,7 +1429,10 @@ export default function CalendarPage() {
                                                                 </div>
                                                                 <p className="text-sm font-semibold text-surface-50">{a.client_name || `Cliente #${a.client_id}`}</p>
                                                                 <p className="text-xs text-surface-200/50 mt-0.5">{workplaceMap[a.workplace_id] || `Local #${a.workplace_id}`}</p>
-                                                                {!isCanceled && (
+                                                                {fmtPrice(a.price) && (
+                                                                    <p className="text-xs font-semibold text-emerald-400 mt-1">{fmtPrice(a.price)}</p>
+                                                                )}
+                                                                {!isTerminal && (
                                                                     <div className="flex gap-2 mt-2 pt-2 border-t border-white/5">
                                                                         <button
                                                                             onClick={(e) => { e.stopPropagation(); setEditTarget(a); }}

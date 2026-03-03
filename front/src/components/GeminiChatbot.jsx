@@ -460,15 +460,7 @@ export default function GeminiChatbot() {
                                             </div>
                                         </div>
                                     ))}
-                                    {isLoading && (
-                                        <div className="flex w-full justify-start">
-                                            <div className="bg-surface-900 border border-surface-700 text-surface-200 p-3 rounded-2xl rounded-bl-none shadow-md flex items-center gap-1.5">
-                                                <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                                <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                                <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce"></span>
-                                            </div>
-                                        </div>
-                                    )}
+
                                     <div ref={messagesEndRef} />
                                 </div>
 

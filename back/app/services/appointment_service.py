@@ -9,12 +9,15 @@ from app.models.workplace import Workplace
 from app.schemas.appointment import AppointmentCreate, AppointmentUpdate
 from app.config import settings
 from app.services.email_service import send_email
-from app.services.email_templates import appointment_confirmation_request_html, appointment_rescheduled_request_html, appointment_package_html
+from app.services.email_templates import appointment_confirmation_request_html, appointment_rescheduled_request_html, appointment_package_html, appointment_price_changed_html
 from app.auth.security import create_appointment_token
 from app.services.holiday_service import is_holiday
 import uuid
 import calendar
 from datetime import timedelta
+
+# Status que indicam que o agendamento não está mais ativo (não gera conflito)
+INACTIVE_STATUSES = ["canceled_client", "canceled_user", "no_show", "completed"]
 
 
 def _validate_appointment(db: Session, user_id: int, data: Dict, exclude_id: Optional[int] = None) -> None:
@@ -76,7 +79,7 @@ def _validate_appointment(db: Session, user_id: int, data: Dict, exclude_id: Opt
         conflict_query = db.query(Appointment).filter(
             Appointment.workplace_id == workplace_id,
             Appointment.date == appt_date,
-            Appointment.status != "canceled",
+            ~Appointment.status.in_(INACTIVE_STATUSES),
             Appointment.start_time < end_time,
             Appointment.end_time > start_time,
         )
@@ -90,6 +93,21 @@ def _validate_appointment(db: Session, user_id: int, data: Dict, exclude_id: Opt
             )
 
 
+def _auto_mark_pending(db: Session, user_id: int) -> None:
+    """Marca automaticamente como 'pending' agendamentos scheduled/confirmed cuja data já passou."""
+    today = date.today()
+    expired = db.query(Appointment).filter(
+        Appointment.user_id == user_id,
+        Appointment.date < today,
+        Appointment.status.in_(["scheduled", "confirmed"]),
+    ).all()
+    
+    if expired:
+        for appt in expired:
+            appt.status = "pending"
+        db.commit()
+
+
 def list_appointments(
     db: Session,
     user_id: int,
@@ -99,6 +117,9 @@ def list_appointments(
     appointment_status: Optional[str] = None,
 ) -> List[Appointment]:
     """Lista agendamentos do usuário com filtros opcionais."""
+    # Auto-marcar expirados como pendentes antes de listar
+    _auto_mark_pending(db, user_id)
+    
     query = (
         db.query(Appointment)
         .options(joinedload(Appointment.client), joinedload(Appointment.workplace))
@@ -155,6 +176,13 @@ def generate_recurrence_dates(start_date: date, limit_days: int, r_type: str, r_
             
     return dates
 
+def _format_price(price) -> str:
+    """Formata preço para exibição no email (ex: R$ 150,00)."""
+    if price is None:
+        return None
+    return f"R$ {float(price):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 def create_appointment(db: Session, user_id: int, data: AppointmentCreate, background_tasks: Optional[BackgroundTasks] = None) -> List[Appointment]:
     """Cria um novo agendamento (ou múltiplos se recorrente)."""
     
@@ -166,8 +194,9 @@ def create_appointment(db: Session, user_id: int, data: AppointmentCreate, backg
         db.refresh(appointment)
         
         if background_tasks and appointment.client.email:
-            token_confirm = create_appointment_token(appointment.id, "confirm")
-            token_cancel = create_appointment_token(appointment.id, "cancel")
+            tv = appointment.confirmation_token_version
+            token_confirm = create_appointment_token(appointment.id, "confirm", token_version=tv)
+            token_cancel = create_appointment_token(appointment.id, "cancel", token_version=tv)
             confirm_url = f"{settings.FRONTEND_URL}/confirmacao?token={token_confirm}"
             cancel_url = f"{settings.FRONTEND_URL}/cancelamento?token={token_cancel}"
             
@@ -179,6 +208,7 @@ def create_appointment(db: Session, user_id: int, data: AppointmentCreate, backg
                 workplace_name=appointment.workplace.name,
                 confirm_url=confirm_url,
                 cancel_url=cancel_url,
+                price=_format_price(appointment.price),
             )
             background_tasks.add_task(send_email, appointment.client.email, "Confirmação de Agendamento", html_body)
 
@@ -233,8 +263,16 @@ def update_appointment(
     appointment = get_appointment(db, appointment_id, user_id)
     update_data = data.model_dump(exclude_unset=True)
 
+    # Bloquear alteração de preço após confirmação do cliente
+    if "price" in update_data and appointment.status == "confirmed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Não é permitido alterar o preço após a confirmação do cliente.",
+        )
+
     old_date = appointment.date
     old_time = appointment.start_time
+    old_price = float(appointment.price) if appointment.price is not None else None
 
     # Mescla dados existentes com atualizações para validação completa
     validation_data = {
@@ -245,56 +283,116 @@ def update_appointment(
     }
     _validate_appointment(db, user_id, validation_data, exclude_id=appointment_id)
 
-    # Se a data mudou, marcar como reagendado
+    # Detectar mudanças de data/hora → setar flag rescheduled
     is_rescheduled = False
     new_date = update_data.get("date")
     new_time = update_data.get("start_time")
     if (new_date and new_date != old_date) or (new_time and new_time != old_time):
-        update_data["status"] = "rescheduled"
+        update_data["rescheduled"] = True
         is_rescheduled = True
+
+    # Detectar mudança de preço
+    new_price = update_data.get("price")
+    price_changed = False
+    if "price" in update_data:
+        if old_price != new_price:
+            price_changed = True
+
+    # Se o preço mudou, incrementar versão do token (invalida links antigos)
+    if price_changed:
+        appointment.confirmation_token_version = (appointment.confirmation_token_version or 1) + 1
 
     for key, value in update_data.items():
         setattr(appointment, key, value)
     db.commit()
     db.refresh(appointment)
     
-    if background_tasks and is_rescheduled and appointment.client.email:
-        token_confirm = create_appointment_token(appointment.id, "confirm")
-        token_cancel = create_appointment_token(appointment.id, "cancel")
-        confirm_url = f"{settings.FRONTEND_URL}/confirmacao?token={token_confirm}"
-        cancel_url = f"{settings.FRONTEND_URL}/cancelamento?token={token_cancel}"
-        
-        html_body = appointment_rescheduled_request_html(
-            client_name=appointment.client.name,
-            professional_name=appointment.user.name,
-            old_time=old_time.strftime("%H:%M"),
-            old_date=old_date.strftime("%d/%m/%Y"),
-            new_time=appointment.start_time.strftime("%H:%M"),
-            new_date=appointment.date.strftime("%d/%m/%Y"),
-            workplace_name=appointment.workplace.name,
-            confirm_url=confirm_url,
-            cancel_url=cancel_url,
-        )
-        background_tasks.add_task(send_email, appointment.client.email, "Agendamento Remarcado - Confirmação", html_body)
+    if background_tasks and appointment.client.email:
+        tv = appointment.confirmation_token_version
+
+        if is_rescheduled:
+            # Reagendamento: enviar email de reagendamento com preço
+            token_confirm = create_appointment_token(appointment.id, "confirm", token_version=tv)
+            token_cancel = create_appointment_token(appointment.id, "cancel", token_version=tv)
+            confirm_url = f"{settings.FRONTEND_URL}/confirmacao?token={token_confirm}"
+            cancel_url = f"{settings.FRONTEND_URL}/cancelamento?token={token_cancel}"
+            
+            html_body = appointment_rescheduled_request_html(
+                client_name=appointment.client.name,
+                professional_name=appointment.user.name,
+                old_time=old_time.strftime("%H:%M"),
+                old_date=old_date.strftime("%d/%m/%Y"),
+                new_time=appointment.start_time.strftime("%H:%M"),
+                new_date=appointment.date.strftime("%d/%m/%Y"),
+                workplace_name=appointment.workplace.name,
+                confirm_url=confirm_url,
+                cancel_url=cancel_url,
+                price=_format_price(appointment.price),
+            )
+            background_tasks.add_task(send_email, appointment.client.email, "Agendamento Remarcado - Confirmação", html_body)
+
+        elif price_changed:
+            # Apenas preço mudou: enviar email específico de alteração de preço
+            token_confirm = create_appointment_token(appointment.id, "confirm", token_version=tv)
+            token_cancel = create_appointment_token(appointment.id, "cancel", token_version=tv)
+            confirm_url = f"{settings.FRONTEND_URL}/confirmacao?token={token_confirm}"
+            cancel_url = f"{settings.FRONTEND_URL}/cancelamento?token={token_cancel}"
+
+            html_body = appointment_price_changed_html(
+                client_name=appointment.client.name,
+                professional_name=appointment.user.name,
+                time=appointment.start_time.strftime("%H:%M"),
+                date=appointment.date.strftime("%d/%m/%Y"),
+                workplace_name=appointment.workplace.name,
+                old_price=_format_price(old_price),
+                new_price=_format_price(appointment.price),
+                confirm_url=confirm_url,
+                cancel_url=cancel_url,
+            )
+            background_tasks.add_task(send_email, appointment.client.email, "Atualização de Valor - Agendamento", html_body)
 
     return appointment
 
 
 def cancel_appointment(db: Session, appointment_id: int, user_id: int, cancel_all_future: bool = False) -> Appointment:
-    """Cancela um agendamento e opcionalmente seus futuros recorrentes."""
+    """Cancela um agendamento (pelo painel do usuário) e opcionalmente seus futuros recorrentes."""
     appointment = get_appointment(db, appointment_id, user_id)
-    appointment.status = "canceled"
+    appointment.status = "canceled_user"
     
     if cancel_all_future and appointment.recurrence_id:
         future_appointments = db.query(Appointment).filter(
             Appointment.user_id == user_id,
             Appointment.recurrence_id == appointment.recurrence_id,
             Appointment.date >= appointment.date,
-            Appointment.status != "canceled"
+            ~Appointment.status.in_(INACTIVE_STATUSES)
         ).all()
         for f_o in future_appointments:
-            f_o.status = "canceled"
+            f_o.status = "canceled_user"
             
+    db.commit()
+    db.refresh(appointment)
+    return appointment
+
+
+VALID_RESOLVE_STATUSES = ["completed", "no_show", "canceled_user"]
+
+def resolve_appointment(db: Session, appointment_id: int, user_id: int, new_status: str) -> Appointment:
+    """Resolve um agendamento pendente definindo seu status final."""
+    if new_status not in VALID_RESOLVE_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Status inválido. Valores permitidos: {', '.join(VALID_RESOLVE_STATUSES)}"
+        )
+    
+    appointment = get_appointment(db, appointment_id, user_id)
+    
+    if appointment.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas agendamentos pendentes podem ser resolvidos."
+        )
+    
+    appointment.status = new_status
     db.commit()
     db.refresh(appointment)
     return appointment
