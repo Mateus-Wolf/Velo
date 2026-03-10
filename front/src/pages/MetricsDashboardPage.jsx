@@ -23,7 +23,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
-import UserDropdown from '../components/UserDropdown';
+import HeaderNav from '../components/HeaderNav';
 import { useTranslation } from 'react-i18next';
 
 export default function MetricsDashboardPage() {
@@ -578,25 +578,7 @@ export default function MetricsDashboardPage() {
             </div>
 
             {/* Navbar */}
-            <nav className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-                    <div className="flex items-center gap-3">
-                        <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => navigate(-1)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-surface-200/70 hover:bg-white/10 hover:text-white transition-all mr-2"
-                        >
-                            <HiOutlineArrowLeft size={16} />
-                        </motion.button>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand shadow-md shadow-brand-600/20">
-                            <HiSparkles className="text-white" size={18} />
-                        </div>
-                        <span className="text-lg font-bold text-gradient">{t('dropdown.dashboard', 'Dashboard')}</span>
-                    </div>
-                    <UserDropdown />
-                </div>
-            </nav>
+            <HeaderNav />
 
             <main className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
                 <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -738,6 +720,9 @@ export default function MetricsDashboardPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+
+
 
                 <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {/* Top 3 Clientes */}

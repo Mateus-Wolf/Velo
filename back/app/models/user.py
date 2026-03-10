@@ -22,6 +22,7 @@ class User(Base):
     two_factor_enabled = sa.Column(sa.Boolean, default=False, nullable=False)
     two_factor_code = sa.Column(sa.String(10), nullable=True)
     two_factor_expires_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    monthly_goal = sa.Column(sa.Float, default=0.0, nullable=False)
 
     # Relacionamentos
     workplaces = relationship("Workplace", back_populates="user", lazy="selectin")

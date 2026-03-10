@@ -53,6 +53,9 @@ class DashboardMetricsResponse(BaseModel):
     total_revenue: float
     avg_ticket: float
     total_priced_appointments: int
+    current_month_revenue: float
+    projected_revenue: float
+    monthly_goal: float
     monthly_revenue: List[MonthlyRevenueSchema]
     top_clients_revenue: List[TopClientRevenueSchema]
 

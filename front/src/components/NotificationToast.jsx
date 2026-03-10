@@ -4,6 +4,7 @@ import { HiOutlineBell, HiOutlineX, HiOutlineClock, HiOutlineUser, HiOutlineOffi
 import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
+import { requestPushPermission, onForegroundMessage } from '../services/pushNotifications';
 
 const POLL_INTERVAL = 60_000; // 60 segundos
 
@@ -51,6 +52,33 @@ export default function NotificationToast() {
     const { t } = useTranslation();
     const [toasts, setToasts] = useState([]);
     const intervalRef = useRef(null);
+
+    // Registrar push notifications quando o usuário loga
+    useEffect(() => {
+        if (!user) return;
+
+        // Solicitar permissão e registrar token (silenciosamente)
+        requestPushPermission().catch(() => {});
+
+        // Escutar pushes em foreground e convertê-los em toasts
+        const unsubscribe = onForegroundMessage((msg) => {
+            playNotificationSound();
+            setToasts((prev) => [
+                ...prev,
+                {
+                    appointment_id: msg.data?.appointment_id || Date.now(),
+                    notification_type: msg.data?.type || 'push',
+                    client_name: msg.title?.replace('🔔 Agendamento com ', '') || 'Agendamento',
+                    workplace_name: '',
+                    date: '',
+                    time: '',
+                    _pushBody: msg.body,
+                },
+            ]);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
 
     const fetchPending = useCallback(async () => {
         if (!user) return;

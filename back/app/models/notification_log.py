@@ -15,6 +15,10 @@ class NotificationLog(Base):
         sa.String(30), nullable=False,
         doc="Tipo: '30min', '1day', '2days', '30min_browser', etc.",
     )
+    is_read = sa.Column(
+        sa.Boolean, nullable=False, default=False,
+        doc="Se o usuário já leu a notificação na central",
+    )
     sent_at = sa.Column(
         sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
     )
@@ -26,3 +30,4 @@ class NotificationLog(Base):
 
     # Relacionamento
     appointment = relationship("Appointment")
+

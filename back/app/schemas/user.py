@@ -22,6 +22,7 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
+    monthly_goal: Optional[float] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -37,6 +38,7 @@ class UserResponse(BaseModel):
     email: str
     avatar_url: Optional[str] = None
     two_factor_enabled: bool = False
+    monthly_goal: float = 0.0
     created_at: datetime
     updated_at: Optional[datetime] = None
 

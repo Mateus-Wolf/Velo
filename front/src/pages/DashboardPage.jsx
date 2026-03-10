@@ -19,7 +19,7 @@ import {
 import { HiSparkles } from 'react-icons/hi2';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
-import UserDropdown from '../components/UserDropdown';
+import HeaderNav from '../components/HeaderNav';
 import WorkplaceModal from '../components/WorkplaceModal';
 
 const DAY_NAMES = {
@@ -359,29 +359,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Navbar */}
-            <nav className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-                    <div className="flex items-center gap-3">
-                        <img src="/favicon.png" alt="Velo Icon" className="h-9 w-9 object-contain drop-shadow-sm" />
-                        <span className="text-lg font-bold text-gradient">Velo</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {/* Back to Calendar */}
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/')}
-                            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-surface-200/70 hover:bg-white/10 hover:text-white transition-all"
-                        >
-                            <HiOutlineCalendar size={16} />
-                            <span className="hidden sm:inline">{t('calendar.title', 'Agenda')}</span>
-                        </motion.button>
-
-                        <UserDropdown />
-                    </div>
-                </div>
-            </nav>
+            <HeaderNav />
 
             {/* Content */}
             <main className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">

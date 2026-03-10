@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage';
 import CalendarPage from './pages/CalendarPage';
 import DashboardPage from './pages/DashboardPage';
 import MetricsDashboardPage from './pages/MetricsDashboardPage';
+import FinancialPage from './pages/FinancialPage';
 import WorkplacePage from './pages/WorkplacePage';
 import ClientHistoryPage from './pages/ClientHistoryPage';
 import WorkplaceHistoryPage from './pages/WorkplaceHistoryPage';
@@ -38,7 +39,7 @@ export default function App() {
   const location = useLocation();
 
   useEffect(() => {
-    const theme = localStorage.getItem('velo_theme') || 'dark';
+    const theme = localStorage.getItem('velo_theme') || 'light';
     document.documentElement.classList.toggle('theme-light', theme === 'light');
   }, []);
 
@@ -110,6 +111,17 @@ export default function App() {
               <ProtectedRoute>
                 <AnimatedPage>
                   <MetricsDashboardPage />
+                </AnimatedPage>
+              </ProtectedRoute>
+            }
+          />
+          {/* Financial */}
+          <Route
+            path="/financeiro"
+            element={
+              <ProtectedRoute>
+                <AnimatedPage>
+                  <FinancialPage />
                 </AnimatedPage>
               </ProtectedRoute>
             }

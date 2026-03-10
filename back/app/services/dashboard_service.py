@@ -237,6 +237,25 @@ def get_dashboard_metrics(db: Session, user_id: int):
         .all()
     )
 
+    # ---------------- PROJEÇÕES ----------------
+    from app.models.user import User
+    user_goal = db.query(User.monthly_goal).filter(User.id == user_id).scalar() or 0.0
+
+    current_month_first_day = today.replace(day=1)
+    
+    pending_revenue_result = db.query(
+        func.coalesce(func.sum(func.coalesce(Appointment.price, avg_ticket)), 0)
+    ).filter(
+        Appointment.user_id == user_id,
+        Appointment.status == 'pending',
+        Appointment.date >= current_month_first_day
+    ).scalar()
+    pending_revenue = float(pending_revenue_result) if pending_revenue_result else 0.0
+
+    current_month_revenue = monthly_revenue[-1]['revenue'] if monthly_revenue else 0.0
+    projected_revenue = current_month_revenue + pending_revenue
+    # -------------------------------------------
+
     return {
         "top_clients": [
             {"client_id": c.client_id, "client_name": c.client_name, "appointment_count": c.appointment_count} 
@@ -258,6 +277,9 @@ def get_dashboard_metrics(db: Session, user_id: int):
         "total_revenue": total_revenue,
         "avg_ticket": avg_ticket,
         "total_priced_appointments": total_priced_appointments,
+        "current_month_revenue": current_month_revenue,
+        "projected_revenue": projected_revenue,
+        "monthly_goal": user_goal,
         "monthly_revenue": monthly_revenue,
         "top_clients_revenue": [
             {"client_name": c.client_name, "total_revenue": float(c.total_revenue), "appointment_count": c.appointment_count}

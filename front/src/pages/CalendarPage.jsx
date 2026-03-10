@@ -23,7 +23,8 @@ import {
 import { HiSparkles } from 'react-icons/hi2';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
-import UserDropdown from '../components/UserDropdown';
+import { requestPushPermission, unsubscribePush, isPushEnabled } from '../services/pushNotifications';
+import HeaderNav from '../components/HeaderNav';
 import SearchableClientSelect from '../components/SearchableClientSelect';
 
 const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -139,6 +140,8 @@ function NotificationsModal({ isOpen, onClose, onSaved }) {
     const [prefs, setPrefs] = useState({ notify_30_min_before: false, notify_1_day_before: false, notify_2_days_before: false });
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [pushEnabled, setPushEnabled] = useState(false);
+    const [pushLoading, setPushLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -147,8 +150,23 @@ function NotificationsModal({ isOpen, onClose, onSaved }) {
                 .then(({ data }) => setPrefs(data))
                 .catch(() => { })
                 .finally(() => setLoading(false));
+            setPushEnabled(isPushEnabled());
         }
     }, [isOpen]);
+
+    const handlePushToggle = async () => {
+        setPushLoading(true);
+        try {
+            if (pushEnabled) {
+                await unsubscribePush();
+                setPushEnabled(false);
+            } else {
+                const token = await requestPushPermission();
+                setPushEnabled(!!token);
+            }
+        } catch { /* silent */ }
+        finally { setPushLoading(false); }
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -229,6 +247,30 @@ function NotificationsModal({ isOpen, onClose, onSaved }) {
                                     ))}
                                 </div>
                             )}
+
+                            {/* Push Notifications Toggle */}
+                            <div className="pt-3 border-t border-white/10">
+                                <motion.div
+                                    whileHover={{ scale: 1.01 }}
+                                    className={`flex items-center justify-between rounded-xl border p-4 transition-all ${pushEnabled
+                                        ? 'border-brand-500/30 bg-brand-500/8'
+                                        : 'border-white/10 bg-white/[0.02] hover:bg-white/5'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xl">📲</span>
+                                        <div>
+                                            <p className="text-sm font-medium text-surface-50">{t('calendar.notifications.push', 'Push Notifications')}</p>
+                                            <p className="text-xs text-surface-200/40 mt-0.5">{t('calendar.notifications.pushDesc', 'Receba alertas mesmo com o navegador fechado')}</p>
+                                        </div>
+                                    </div>
+                                    <ToggleSwitch
+                                        checked={pushEnabled}
+                                        onChange={handlePushToggle}
+                                        disabled={pushLoading}
+                                    />
+                                </motion.div>
+                            </div>
 
                             <motion.button onClick={handleSave} disabled={saving || loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                                 className="w-full rounded-xl gradient-brand py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 disabled:opacity-60 flex items-center justify-center gap-2">
@@ -1093,27 +1135,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Navbar */}
-            <nav className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-                    <div className="flex items-center gap-3">
-                        <img src="/favicon.png" alt="Velo Icon" className="h-9 w-9 object-contain drop-shadow-sm" />
-                        <span className="text-lg font-bold text-gradient">Velo</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/workplaces')}
-                            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-surface-200/70 hover:bg-white/10 hover:text-white transition-all"
-                        >
-                            <HiOutlineOfficeBuilding size={16} />
-                            <span className="hidden sm:inline">{t('workplaces.title', 'Locais')}</span>
-                        </motion.button>
-
-                        <UserDropdown />
-                    </div>
-                </div>
-            </nav>
+            <HeaderNav />
 
             {/* Content */}
             <main className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">

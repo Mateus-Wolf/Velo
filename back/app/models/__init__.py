@@ -8,6 +8,8 @@ from app.models.notification_preference import NotificationPreference
 from app.models.notification_log import NotificationLog
 from app.models.password_reset import PasswordReset
 from app.models.recognized_device import RecognizedDevice
+from app.models.goal_history import GoalHistory
+from app.models.push_subscription import PushSubscription
 
 __all__ = [
     "User",
@@ -20,4 +22,6 @@ __all__ = [
     "NotificationLog",
     "PasswordReset",
     "RecognizedDevice",
+    "GoalHistory",
+    "PushSubscription",
 ]

@@ -123,7 +123,7 @@ def _process_notifications(db: Session) -> None:
 
 
 def _send_notification(db: Session, appt, notif_type: str) -> None:
-    """Envia email de notificação e registra no log."""
+    """Envia email + push notification e registra no log."""
     user = appt.user
     client_name = appt.client.name if appt.client else f"Cliente #{appt.client_id}"
     workplace_name = appt.workplace.name if appt.workplace else f"Local #{appt.workplace_id}"
@@ -144,6 +144,20 @@ def _send_notification(db: Session, appt, notif_type: str) -> None:
             subject=f"🔔 MindFlow — Lembrete: agendamento com {client_name} às {appt_time}",
             html_body=html,
         )
+
+        # Push notification
+        from app.services.push_service import send_push_to_user
+        send_push_to_user(
+            db=db,
+            user_id=user.id,
+            title=f"🔔 Agendamento com {client_name}",
+            body=f"{appt_date} às {appt_time} — {workplace_name}",
+            data={
+                "appointment_id": str(appt.id),
+                "type": notif_type,
+            },
+        )
+
         # Registrar no log
         log = NotificationLog(
             appointment_id=appt.id,

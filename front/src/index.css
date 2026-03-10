@@ -131,9 +131,9 @@
 
 /* ---- Light Theme ---- */
 .theme-light {
-  --color-surface-50: #020617;
-  --color-surface-100: #0f172a;
-  --color-surface-200: #1e293b;
+  --color-surface-50: #0f172a;
+  --color-surface-100: #1e293b;
+  --color-surface-200: #334155;
   --color-surface-700: #e2e8f0;
   --color-surface-800: #f1f5f9;
   --color-surface-900: #f8fafc;
@@ -141,25 +141,27 @@
 }
 
 .theme-light body {
-  background-color: #f8fafc;
-  color: #020617;
+  background-color: var(--color-surface-950);
+  color: var(--color-surface-50);
 }
 
 .theme-light .gradient-bg {
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f1f5f9 100%);
+  background: radial-gradient(circle at top left, #ffffff 0%, #eef2ff 100%);
 }
 
 .theme-light .glass {
   background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
 }
 
 .theme-light .glass-strong {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
 }
 
 .theme-light ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.4);
 }
 

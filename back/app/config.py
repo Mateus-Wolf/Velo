@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     MAIL_PORT: int = 587
     FRONTEND_URL: str = "http://localhost:5173"
     GEMINI_API_KEY: str = ""
+    FIREBASE_CREDENTIALS_JSON: str = ""
 
     @property
     def CORS_ORIGINS(self) -> list[str]:

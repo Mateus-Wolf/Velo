@@ -12,7 +12,7 @@ import {
 } from 'react-icons/hi';
 import { HiOutlineUserMinus } from 'react-icons/hi2';
 import api from '../services/api';
-import UserDropdown from '../components/UserDropdown';
+import HeaderNav from '../components/HeaderNav';
 import { useTranslation } from 'react-i18next';
 
 function fmtTime(t) { return t ? t.substring(0, 5) : ''; }
@@ -79,32 +79,7 @@ export default function PendingAppointmentsPage() {
             </div>
 
             {/* Navbar */}
-            <nav className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">
-                <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-                    <div className="flex items-center gap-3">
-                        <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => navigate(-1)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-surface-200/70 hover:bg-white/10 hover:text-white transition-all mr-2"
-                        >
-                            <HiOutlineArrowLeft size={16} />
-                        </motion.button>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 shadow-md shadow-amber-600/10">
-                            <HiOutlineClock className="text-amber-400" size={18} />
-                        </div>
-                        <span className="text-lg font-bold text-surface-50">
-                            {t('pending.title', 'Agendamentos Pendentes')}
-                        </span>
-                        {appointments.length > 0 && (
-                            <span className="ml-2 text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                                {appointments.length}
-                            </span>
-                        )}
-                    </div>
-                    <UserDropdown />
-                </div>
-            </nav>
+            <HeaderNav />
 
             <main className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6">
                 {/* Description */}

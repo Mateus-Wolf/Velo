@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiMessageSquare, FiX, FiSend, FiMaximize2, FiPlus, FiClock, FiChevronLeft, FiTrash2 } from 'react-icons/fi';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
+import useAuthStore from '../store/useAuthStore';
 
 const INIT_SIZE = { width: '384px', height: '450px' };
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -29,7 +30,9 @@ export default function GeminiChatbot() {
 
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [hasToken, setHasToken] = useState(false);
+
+    // Auth State
+    const token = useAuthStore((state) => state.token);
 
     const messagesEndRef = useRef(null);
     const modalRef = useRef(null);
@@ -51,19 +54,6 @@ export default function GeminiChatbot() {
     useEffect(() => {
         localStorage.setItem('velo_chatbot_sessions', JSON.stringify(sessions));
     }, [sessions]);
-
-    useEffect(() => {
-        const token = localStorage.getItem('velo_token') || sessionStorage.getItem('velo_token');
-        setHasToken(!!token);
-
-        const checkToken = () => {
-            const currentToken = localStorage.getItem('velo_token') || sessionStorage.getItem('velo_token');
-            setHasToken(!!currentToken);
-        };
-
-        window.addEventListener('storage', checkToken);
-        return () => window.removeEventListener('storage', checkToken);
-    }, []);
 
     // Session Timeout & Init Logic
     useEffect(() => {
@@ -106,7 +96,7 @@ export default function GeminiChatbot() {
         }
     }, [sessions, currentSessionId, isOpen, showHistory]);
 
-    if (!hasToken) return null;
+    if (!token) return null;
 
     // --- Core Session Functions ---
     const createNewSession = () => {

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function SettingsModal({ isOpen, onClose }) {
     const { t, i18n } = useTranslation();
-    const [theme, setTheme] = useState(() => localStorage.getItem('velo_theme') || 'dark');
+    const [theme, setTheme] = useState(() => localStorage.getItem('velo_theme') || 'light');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {

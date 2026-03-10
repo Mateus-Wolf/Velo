@@ -205,6 +205,106 @@ def mark_seen(
     return {"message": "ok"}
 
 
+# ------------------------------------------------------------------ #
+#  Central de Notificações — Histórico                                 #
+# ------------------------------------------------------------------ #
+
+@router.get(
+    "/history",
+    summary="Histórico de notificações do usuário",
+)
+def get_notification_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna as últimas 50 notificações do usuário com dados do agendamento."""
+    logs = (
+        db.query(NotificationLog)
+        .join(Appointment, NotificationLog.appointment_id == Appointment.id)
+        .options(
+            joinedload(NotificationLog.appointment)
+            .joinedload(Appointment.client),
+            joinedload(NotificationLog.appointment)
+            .joinedload(Appointment.workplace),
+        )
+        .filter(Appointment.user_id == current_user.id)
+        .order_by(NotificationLog.sent_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    result = []
+    for log in logs:
+        appt = log.appointment
+        client_name = appt.client.name if appt.client else f"Cliente #{appt.client_id}"
+        workplace_name = appt.workplace.name if appt.workplace else f"Local #{appt.workplace_id}"
+
+        result.append({
+            "id": log.id,
+            "notification_type": log.notification_type,
+            "is_read": log.is_read,
+            "sent_at": log.sent_at.isoformat() if log.sent_at else None,
+            "appointment_id": appt.id,
+            "client_name": client_name,
+            "workplace_name": workplace_name,
+            "date": appt.date.strftime("%d/%m/%Y"),
+            "time": appt.start_time.strftime("%H:%M"),
+            "status": appt.status,
+        })
+
+    return result
+
+
+@router.get(
+    "/unread-count",
+    summary="Contagem de notificações não lidas",
+)
+def get_unread_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna a quantidade de notificações não lidas do usuário."""
+    count = (
+        db.query(NotificationLog)
+        .join(Appointment, NotificationLog.appointment_id == Appointment.id)
+        .filter(
+            Appointment.user_id == current_user.id,
+            NotificationLog.is_read == False,  # noqa: E712
+        )
+        .count()
+    )
+    return {"count": count}
+
+
+@router.patch(
+    "/read-all",
+    summary="Marcar todas as notificações como lidas",
+)
+def mark_all_as_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Marca todas as notificações do usuário como lidas."""
+    # Buscar IDs de notificações não lidas do usuário
+    unread_ids = (
+        db.query(NotificationLog.id)
+        .join(Appointment, NotificationLog.appointment_id == Appointment.id)
+        .filter(
+            Appointment.user_id == current_user.id,
+            NotificationLog.is_read == False,  # noqa: E712
+        )
+        .all()
+    )
+    if unread_ids:
+        ids = [r[0] for r in unread_ids]
+        db.query(NotificationLog).filter(
+            NotificationLog.id.in_(ids)
+        ).update({NotificationLog.is_read: True}, synchronize_session=False)
+        db.commit()
+
+    return {"message": "ok"}
+
+
 # =============================================
 # TEMPORÁRIO — Endpoint de teste de notificação
 # Remover em produção
@@ -220,4 +320,5 @@ def test_send_notifications(
     from app.services.notification_scheduler import check_and_send_notifications
     check_and_send_notifications()
     return {"message": "Scheduler executado! Verifique os logs do terminal."}
+
 
