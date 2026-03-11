@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    HiOutlineArrowLeft,
     HiOutlineCheckCircle,
     HiOutlineXCircle,
     HiOutlineClock,
@@ -13,6 +12,7 @@ import {
 import { HiOutlineUserMinus } from 'react-icons/hi2';
 import api from '../services/api';
 import HeaderNav from '../components/HeaderNav';
+import CompleteAppointmentModal from '../components/CompleteAppointmentModal';
 import { useTranslation } from 'react-i18next';
 
 function fmtTime(t) { return t ? t.substring(0, 5) : ''; }
@@ -27,6 +27,7 @@ export default function PendingAppointmentsPage() {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [resolving, setResolving] = useState(null); // id being resolved
+    const [completeTarget, setCompleteTarget] = useState(null); // appointment to complete
 
     const fetchPending = async () => {
         setLoading(true);
@@ -45,12 +46,29 @@ export default function PendingAppointmentsPage() {
     const handleResolve = async (appointmentId, newStatus) => {
         setResolving(appointmentId);
         try {
-            await api.patch(`/appointments/${appointmentId}/resolve`, null, {
-                params: { new_status: newStatus }
+            await api.patch(`/appointments/${appointmentId}/resolve`, {
+                new_status: newStatus,
             });
             setAppointments(prev => prev.filter(a => a.id !== appointmentId));
         } catch (err) {
             console.error('Erro ao resolver:', err);
+        } finally {
+            setResolving(null);
+        }
+    };
+
+    const handleComplete = async (paymentData) => {
+        if (!completeTarget) return;
+        setResolving(completeTarget.id);
+        try {
+            await api.patch(`/appointments/${completeTarget.id}/resolve`, {
+                new_status: 'completed',
+                ...paymentData,
+            });
+            setAppointments(prev => prev.filter(a => a.id !== completeTarget.id));
+            setCompleteTarget(null);
+        } catch (err) {
+            console.error('Erro ao concluir:', err);
         } finally {
             setResolving(null);
         }
@@ -193,7 +211,7 @@ export default function PendingAppointmentsPage() {
                                             whileHover={{ scale: 1.03 }}
                                             whileTap={{ scale: 0.97 }}
                                             disabled={resolving === a.id}
-                                            onClick={() => handleResolve(a.id, 'completed')}
+                                            onClick={() => setCompleteTarget(a)}
                                             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all disabled:opacity-40"
                                         >
                                             <HiOutlineCheckCircle size={15} />
@@ -228,6 +246,15 @@ export default function PendingAppointmentsPage() {
                     </AnimatePresence>
                 </div>
             </main>
+
+            {/* Complete Modal */}
+            <CompleteAppointmentModal
+                isOpen={!!completeTarget}
+                onClose={() => setCompleteTarget(null)}
+                onConfirm={handleComplete}
+                loading={resolving === completeTarget?.id}
+                appointment={completeTarget}
+            />
         </div>
     );
 }

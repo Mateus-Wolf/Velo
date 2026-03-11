@@ -61,10 +61,10 @@ export default function FinancialPage() {
         }
     }, []);
 
-    const fetchProjection = useCallback(async () => {
+    const fetchProjection = useCallback(async (forceRefresh = false) => {
         setLoadingProjection(true);
         try {
-            const { data } = await api.post('/financial/projection');
+            const { data } = await api.post(`/financial/projection?force_refresh=${forceRefresh}`);
             setProjection(data.projection);
         } catch (err) {
             console.error('Erro ao gerar projeção:', err);
@@ -77,9 +77,9 @@ export default function FinancialPage() {
     useEffect(() => {
         fetchMetrics();
         fetchHistory();
-        // Fetch projection if user already has a goal
+        // Buscar projeção do cache (sem force_refresh) ao abrir a página
         if (user?.monthly_goal > 0) {
-            fetchProjection();
+            fetchProjection(false);
         }
     }, []);
 
@@ -92,7 +92,7 @@ export default function FinancialPage() {
             await Promise.all([fetchMetrics(), fetchHistory()]);
             // Generate new projection
             if (data.monthly_goal > 0) {
-                fetchProjection();
+                fetchProjection(true);
             } else {
                 setProjection(null);
             }
@@ -313,7 +313,7 @@ export default function FinancialPage() {
                                     whileHover={{ scale: 1.04 }}
                                     whileTap={{ scale: 0.96 }}
                                     disabled={loadingProjection}
-                                    onClick={fetchProjection}
+                                    onClick={() => fetchProjection(true)}
                                     className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-surface-200/70 hover:bg-brand-500/20 hover:text-brand-400 transition-all disabled:opacity-50"
                                 >
                                     <HiSparkles size={14} />

@@ -6,7 +6,7 @@ from fastapi import HTTPException, status, BackgroundTasks
 
 from app.models.appointment import Appointment
 from app.models.workplace import Workplace
-from app.schemas.appointment import AppointmentCreate, AppointmentUpdate
+from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, VALID_PAYMENT_METHODS
 from app.config import settings
 from app.services.email_service import send_email
 from app.services.email_templates import appointment_confirmation_request_html, appointment_rescheduled_request_html, appointment_package_html, appointment_price_changed_html
@@ -94,17 +94,16 @@ def _validate_appointment(db: Session, user_id: int, data: Dict, exclude_id: Opt
 
 
 def _auto_mark_pending(db: Session, user_id: int) -> None:
-    """Marca automaticamente como 'pending' agendamentos scheduled/confirmed cuja data já passou."""
+    """Marca automaticamente como 'pending' agendamentos scheduled/confirmed cuja data já passou.
+    Usa bulk UPDATE para evitar carregar todos os objetos em memória."""
     today = date.today()
-    expired = db.query(Appointment).filter(
+    updated = db.query(Appointment).filter(
         Appointment.user_id == user_id,
         Appointment.date < today,
         Appointment.status.in_(["scheduled", "confirmed"]),
-    ).all()
+    ).update({Appointment.status: "pending"}, synchronize_session=False)
     
-    if expired:
-        for appt in expired:
-            appt.status = "pending"
+    if updated:
         db.commit()
 
 
@@ -115,8 +114,12 @@ def list_appointments(
     client_id: Optional[int] = None,
     appointment_date: Optional[date] = None,
     appointment_status: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
 ) -> List[Appointment]:
-    """Lista agendamentos do usuário com filtros opcionais."""
+    """Lista agendamentos do usuário com filtros opcionais.
+    Quando nenhum filtro de data é fornecido, retorna apenas agendamentos
+    dos últimos 3 meses até os próximos 3 meses."""
     # Auto-marcar expirados como pendentes antes de listar
     _auto_mark_pending(db, user_id)
     
@@ -131,9 +134,32 @@ def list_appointments(
         query = query.filter(Appointment.client_id == client_id)
     if appointment_date:
         query = query.filter(Appointment.date == appointment_date)
+    else:
+        # Filtro de intervalo de datas (ou janela padrão de 6 meses)
+        if date_from:
+            query = query.filter(Appointment.date >= date_from)
+        elif not appointment_status:
+            # Padrão: últimos 3 meses
+            default_from = date.today() - timedelta(days=90)
+            query = query.filter(Appointment.date >= default_from)
+        if date_to:
+            query = query.filter(Appointment.date <= date_to)
+        elif not appointment_status:
+            # Padrão: próximos 3 meses
+            default_to = date.today() + timedelta(days=90)
+            query = query.filter(Appointment.date <= default_to)
     if appointment_status:
         query = query.filter(Appointment.status == appointment_status)
     return query.order_by(Appointment.date, Appointment.start_time).all()
+
+
+def count_pending(db: Session, user_id: int) -> int:
+    """Retorna apenas a contagem de agendamentos pendentes — sem JOINs."""
+    _auto_mark_pending(db, user_id)
+    return db.query(Appointment).filter(
+        Appointment.user_id == user_id,
+        Appointment.status == "pending",
+    ).count()
 
 
 def get_appointment(db: Session, appointment_id: int, user_id: int) -> Appointment:
@@ -376,7 +402,10 @@ def cancel_appointment(db: Session, appointment_id: int, user_id: int, cancel_al
 
 VALID_RESOLVE_STATUSES = ["completed", "no_show", "canceled_user"]
 
-def resolve_appointment(db: Session, appointment_id: int, user_id: int, new_status: str) -> Appointment:
+def resolve_appointment(
+    db: Session, appointment_id: int, user_id: int, new_status: str,
+    paid_value: Optional[float] = None, payment_method: Optional[str] = None,
+) -> Appointment:
     """Resolve um agendamento pendente definindo seu status final."""
     if new_status not in VALID_RESOLVE_STATUSES:
         raise HTTPException(
@@ -393,6 +422,47 @@ def resolve_appointment(db: Session, appointment_id: int, user_id: int, new_stat
         )
     
     appointment.status = new_status
+    
+    # Salvar dados de pagamento quando concluído
+    if new_status == "completed" and payment_method:
+        if payment_method not in VALID_PAYMENT_METHODS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Método de pagamento inválido. Valores: {', '.join(VALID_PAYMENT_METHODS)}"
+            )
+        appointment.payment_method = payment_method
+        appointment.paid_value = None if payment_method == "free" else paid_value
+    
     db.commit()
     db.refresh(appointment)
     return appointment
+
+
+def complete_appointment(
+    db: Session, appointment_id: int, user_id: int,
+    paid_value: Optional[float] = None, payment_method: Optional[str] = None,
+) -> Appointment:
+    """Conclui um agendamento ativo (scheduled/confirmed) diretamente da agenda."""
+    appointment = get_appointment(db, appointment_id, user_id)
+    
+    if appointment.status in ["completed", "canceled_client", "canceled_user", "no_show"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este agendamento já foi finalizado."
+        )
+    
+    appointment.status = "completed"
+    
+    if payment_method:
+        if payment_method not in VALID_PAYMENT_METHODS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Método de pagamento inválido. Valores: {', '.join(VALID_PAYMENT_METHODS)}"
+            )
+        appointment.payment_method = payment_method
+        appointment.paid_value = None if payment_method == "free" else paid_value
+    
+    db.commit()
+    db.refresh(appointment)
+    return appointment
+

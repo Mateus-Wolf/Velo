@@ -17,7 +17,6 @@ class AppointmentCreate(BaseModel):
     recurrence_type: Optional[str] = None # 'weekly', 'biweekly', 'triweekly', 'monthly'
     recurrence_value: Optional[str] = None # Day of the week (0-6) or day of the month (1-31)
 
-
 class AppointmentUpdate(BaseModel):
     workplace_id: Optional[int] = None
     client_id: Optional[int] = None
@@ -26,6 +25,38 @@ class AppointmentUpdate(BaseModel):
     end_time: Optional[_dt.time] = None
     status: Optional[str] = None  # scheduled | confirmed | completed | pending | canceled_client | canceled_user | no_show
     price: Optional[float] = None
+
+
+VALID_PAYMENT_METHODS = ["pix", "credit", "debit", "boleto", "cash", "free"]
+
+
+class ResolveAppointmentRequest(BaseModel):
+    new_status: str  # completed | no_show | canceled_user
+    paid_value: Optional[float] = None
+    payment_method: Optional[str] = None  # pix | credit | debit | boleto | cash | free
+
+
+class CompleteAppointmentRequest(BaseModel):
+    """Usado para concluir agendamentos diretamente da agenda (não-pendentes)."""
+    paid_value: Optional[float] = None
+    payment_method: Optional[str] = None  # pix | credit | debit | boleto | cash | free
+
+
+# ---------- Reviews ----------
+
+class ReviewCreate(BaseModel):
+    rating: int  # 1-5
+    comment: Optional[str] = None
+
+
+class ReviewResponse(BaseModel):
+    id: int
+    appointment_id: int
+    rating: int
+    comment: Optional[str] = None
+    created_at: _dt.datetime
+
+    model_config = {"from_attributes": True}
 
 
 # ---------- Saída ----------
@@ -41,10 +72,13 @@ class AppointmentResponse(BaseModel):
     status: str
     rescheduled: bool = False
     price: Optional[float] = None
+    paid_value: Optional[float] = None
+    payment_method: Optional[str] = None
     recurrence_id: Optional[str] = None
     created_at: _dt.datetime
     client_name: Optional[str] = None
     workplace_name: Optional[str] = None
+    review: Optional[ReviewResponse] = None
 
     model_config = {"from_attributes": True}
 

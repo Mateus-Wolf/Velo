@@ -23,9 +23,10 @@ class NotificationLog(Base):
         sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
     )
 
-    # Índice composto para evitar duplicatas
+    # Índices compostos para performance e unicidade
     __table_args__ = (
         sa.UniqueConstraint("appointment_id", "notification_type", name="uq_appt_notif_type"),
+        sa.Index("ix_notif_log_appt_read", "appointment_id", "is_read"),
     )
 
     # Relacionamento

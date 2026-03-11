@@ -10,6 +10,7 @@ from app.models.password_reset import PasswordReset
 from app.models.recognized_device import RecognizedDevice
 from app.models.goal_history import GoalHistory
 from app.models.push_subscription import PushSubscription
+from app.models.review import Review
 
 __all__ = [
     "User",
@@ -24,4 +25,6 @@ __all__ = [
     "RecognizedDevice",
     "GoalHistory",
     "PushSubscription",
+    "Review",
 ]
+

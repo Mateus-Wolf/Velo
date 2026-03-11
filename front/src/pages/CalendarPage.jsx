@@ -19,6 +19,7 @@ import {
     HiOutlineEyeOff,
     HiOutlineCalendar,
     HiOutlineFilter,
+    HiOutlineCheckCircle,
 } from 'react-icons/hi';
 import { HiSparkles } from 'react-icons/hi2';
 import useAuthStore from '../store/useAuthStore';
@@ -26,6 +27,7 @@ import api from '../services/api';
 import { requestPushPermission, unsubscribePush, isPushEnabled } from '../services/pushNotifications';
 import HeaderNav from '../components/HeaderNav';
 import SearchableClientSelect from '../components/SearchableClientSelect';
+import CompleteAppointmentModal from '../components/CompleteAppointmentModal';
 
 const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_NAMES = [
@@ -797,7 +799,7 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
 /* ------------------------------------------------------------------ */
 /*  Day Panel (sidebar / mobile section)                               */
 /* ------------------------------------------------------------------ */
-function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel, isMobile }) {
+function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel, onComplete, isMobile }) {
     const { t } = useTranslation();
     const dayAppts = appointments.filter((a) => a.date === dKey(date));
     const label = `${pad(date.getDate())} de ${t(`calendar.months.${date.getMonth()}`)}`;
@@ -869,6 +871,14 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
                                         </motion.button>
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
+                                            onClick={() => onComplete(a)}
+                                            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all"
+                                        >
+                                            <HiOutlineCheckCircle size={13} />
+                                            {t('calendar.dayPanel.complete', 'Concluir')}
+                                        </motion.button>
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
                                             onClick={() => onCancel(a)}
                                             className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-medium text-surface-200/70 hover:bg-red-500/15 hover:text-red-300 hover:border-red-500/30 transition-all"
                                         >
@@ -906,6 +916,8 @@ export default function CalendarPage() {
     const [editTarget, setEditTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
     const [canceling, setCanceling] = useState(false);
+    const [completeTarget, setCompleteTarget] = useState(null);
+    const [completing, setCompleting] = useState(false);
     const [searchClient, setSearchClient] = useState('');
     const [filterWorkplace, setFilterWorkplace] = useState('');
     const [jumpDate, setJumpDate] = useState('');
@@ -961,6 +973,19 @@ export default function CalendarPage() {
         } catch (err) {
             console.error('Erro ao cancelar:', err);
         } finally { setCanceling(false); }
+    };
+
+    const handleComplete = async (paymentData) => {
+        if (!completeTarget) return;
+        setCompleting(true);
+        try {
+            await api.patch(`/appointments/${completeTarget.id}/complete`, paymentData);
+            const apptRes = await api.get('/appointments/');
+            setAppointments(apptRes.data);
+            setCompleteTarget(null);
+        } catch (err) {
+            console.error('Erro ao concluir:', err);
+        } finally { setCompleting(false); }
     };
 
     // Calendar grid
@@ -1463,6 +1488,12 @@ export default function CalendarPage() {
                                                                             <HiOutlinePencil size={11} /> Editar
                                                                         </button>
                                                                         <button
+                                                                            onClick={(e) => { e.stopPropagation(); setCompleteTarget(a); }}
+                                                                            className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/10 py-1.5 text-[10px] font-medium text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                                                                        >
+                                                                            <HiOutlineCheckCircle size={11} /> Concluir
+                                                                        </button>
+                                                                        <button
                                                                             onClick={(e) => { e.stopPropagation(); setCancelTarget(a); }}
                                                                             className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/5 py-1.5 text-[10px] font-medium text-surface-200/70 hover:bg-red-500/15 hover:text-red-300 transition-all"
                                                                         >
@@ -1523,6 +1554,7 @@ export default function CalendarPage() {
                                     workplaceMap={workplaceMap}
                                     onEdit={setEditTarget}
                                     onCancel={setCancelTarget}
+                                    onComplete={setCompleteTarget}
                                     isMobile
                                 />
                             ) : (
@@ -1545,6 +1577,7 @@ export default function CalendarPage() {
                                     workplaceMap={workplaceMap}
                                     onEdit={setEditTarget}
                                     onCancel={setCancelTarget}
+                                    onComplete={setCompleteTarget}
                                 />
                             )}
                         </AnimatePresence>
@@ -1595,6 +1628,13 @@ export default function CalendarPage() {
                 isOpen={notifModalOpen}
                 onClose={() => setNotifModalOpen(false)}
                 onSaved={handleNotifSaved}
+            />
+            <CompleteAppointmentModal
+                isOpen={!!completeTarget}
+                onClose={() => setCompleteTarget(null)}
+                onConfirm={handleComplete}
+                loading={completing}
+                appointment={completeTarget}
             />
 
             {/* Toast notification */}

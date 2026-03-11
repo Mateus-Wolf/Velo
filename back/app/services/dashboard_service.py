@@ -152,13 +152,12 @@ def get_dashboard_metrics(db: Session, user_id: int):
     from datetime import date, timedelta
     from dateutil.relativedelta import relativedelta
 
-    # Receita total (apenas agendamentos concluídos com preço)
+    # Receita total (apenas agendamentos concluídos — usa paid_value se disponível, senão price)
     total_revenue_result = db.query(
-        func.coalesce(func.sum(Appointment.price), 0)
+        func.coalesce(func.sum(func.coalesce(Appointment.paid_value, Appointment.price)), 0)
     ).filter(
         Appointment.user_id == user_id,
         Appointment.status == 'completed',
-        Appointment.price.isnot(None),
     ).scalar()
     total_revenue = float(total_revenue_result) if total_revenue_result else 0.0
 

@@ -15,6 +15,7 @@ from app.services.financial_service import (
     get_goal_history,
     clear_goal_history,
     generate_financial_projection,
+    invalidate_projection_cache,
 )
 
 router = APIRouter(tags=["Financial"])
@@ -29,6 +30,7 @@ def set_financial_goal(
     """Salva a nova meta de faturamento e registra a meta anterior no histórico."""
     try:
         new_goal = save_goal(db=db, user_id=current_user.id, new_goal=body.goal_value)
+        invalidate_projection_cache(current_user.id)
         return {"monthly_goal": new_goal, "message": "Meta atualizada com sucesso!"}
     except Exception as e:
         raise HTTPException(
@@ -71,6 +73,7 @@ def delete_financial_goal_history(
 
 @router.post("/financial/projection", response_model=FinancialProjectionResponse)
 def get_financial_projection(
+    force_refresh: bool = False,
     db: Session = Depends(database.get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -80,7 +83,9 @@ def get_financial_projection(
         if user_goal <= 0:
             return {"projection": "Defina uma meta acima de zero para gerar uma projeção."}
 
-        projection = generate_financial_projection(db=db, user_id=current_user.id, goal=user_goal)
+        projection = generate_financial_projection(
+            db=db, user_id=current_user.id, goal=user_goal, force_refresh=force_refresh
+        )
         return {"projection": projection}
     except Exception as e:
         raise HTTPException(

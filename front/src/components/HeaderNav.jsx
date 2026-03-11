@@ -30,8 +30,8 @@ export default function HeaderNav() {
     useEffect(() => {
         const fetchPending = async () => {
             try {
-                const res = await api.get('/appointments/', { params: { appointment_status: 'pending' } });
-                setPendingCount(res.data.length);
+                const res = await api.get('/appointments/pending-count');
+                setPendingCount(res.data.count);
             } catch { /* silently ignore */ }
         };
         fetchPending();

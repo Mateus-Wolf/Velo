@@ -6,6 +6,9 @@ from app.models.user import User
 from app.models.goal_history import GoalHistory
 from app.models.appointment import Appointment
 
+# Cache em memória para projeções financeiras (user_id -> result)
+_projection_cache: dict[int, str] = {}
+
 
 def save_goal(db: Session, user_id: int, new_goal: float) -> float:
     """
@@ -73,8 +76,15 @@ def clear_goal_history(db: Session, user_id: int) -> int:
     return count
 
 
-def generate_financial_projection(db: Session, user_id: int, goal: float) -> str:
-    """Gera projeção financeira usando Gemini com base na meta e receita atual."""
+def generate_financial_projection(db: Session, user_id: int, goal: float, force_refresh: bool = False) -> str:
+    """Gera projeção financeira usando Gemini com base na meta e receita atual.
+    Usa cache em memória de 30 min para evitar chamadas repetidas à API."""
+    global _projection_cache
+
+    # Verificar cache (a menos que force_refresh)
+    if not force_refresh and user_id in _projection_cache:
+        return _projection_cache[user_id]
+
     from app.services.gemini_service import gemini_client
     from google.genai import types
 
@@ -166,6 +176,14 @@ Regras:
                 system_instruction="Você é um consultor financeiro do sistema Velo. Seja conciso e direto.",
             ),
         )
-        return response.text
+        result = response.text
+        # Salvar no cache
+        _projection_cache[user_id] = result
+        return result
     except Exception as e:
         return f"Não foi possível gerar a projeção agora. Tente novamente mais tarde."
+
+
+def invalidate_projection_cache(user_id: int) -> None:
+    """Invalida o cache de projeção de um usuário (ex: ao salvar nova meta)."""
+    _projection_cache.pop(user_id, None)

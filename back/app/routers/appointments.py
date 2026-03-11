@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, AppointmentResponse
+from app.schemas.appointment import (
+    AppointmentCreate,
+    AppointmentUpdate,
+    AppointmentResponse,
+    ResolveAppointmentRequest,
+    CompleteAppointmentRequest,
+)
 from app.services import appointment_service
 
 router = APIRouter(prefix="/appointments", tags=["Agendamentos"])
@@ -19,6 +25,8 @@ def list_appointments(
     client_id: Optional[int] = None,
     appointment_date: Optional[date] = None,
     appointment_status: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -29,7 +37,19 @@ def list_appointments(
         client_id=client_id,
         appointment_date=appointment_date,
         appointment_status=appointment_status,
+        date_from=date_from,
+        date_to=date_to,
     )
+
+
+@router.get("/pending-count")
+def get_pending_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna apenas a contagem de agendamentos pendentes (endpoint leve)."""
+    count = appointment_service.count_pending(db, current_user.id)
+    return {"count": count}
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
@@ -79,9 +99,29 @@ def cancel_appointment(
 @router.patch("/{appointment_id}/resolve", response_model=AppointmentResponse)
 def resolve_appointment(
     appointment_id: int,
-    new_status: str,
+    body: ResolveAppointmentRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Resolve um agendamento pendente (completed, no_show, canceled_user)."""
-    return appointment_service.resolve_appointment(db, appointment_id, current_user.id, new_status)
+    """Resolve um agendamento pendente (completed, no_show, canceled_user) com dados de pagamento."""
+    return appointment_service.resolve_appointment(
+        db, appointment_id, current_user.id,
+        new_status=body.new_status,
+        paid_value=body.paid_value,
+        payment_method=body.payment_method,
+    )
+
+
+@router.patch("/{appointment_id}/complete", response_model=AppointmentResponse)
+def complete_appointment(
+    appointment_id: int,
+    body: CompleteAppointmentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Conclui um agendamento ativo diretamente da agenda com dados de pagamento."""
+    return appointment_service.complete_appointment(
+        db, appointment_id, current_user.id,
+        paid_value=body.paid_value,
+        payment_method=body.payment_method,
+    )

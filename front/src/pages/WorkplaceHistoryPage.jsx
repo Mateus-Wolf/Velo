@@ -36,6 +36,9 @@ export default function WorkplaceHistoryPage() {
     const [dateTo, setDateTo] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchClient, setSearchClient] = useState('');
+    const [filterPayment, setFilterPayment] = useState('all');
+    const [sortRating, setSortRating] = useState('none');
+    const [sortValue, setSortValue] = useState('none');
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
@@ -53,7 +56,7 @@ export default function WorkplaceHistoryPage() {
     }, [workplaceId]);
 
     const filtered = useMemo(() => {
-        let list = appointments;
+        let list = [...appointments];
         if (filterStatus !== 'all') list = list.filter((a) => a.status === filterStatus);
         if (dateFrom) list = list.filter((a) => a.date >= dateFrom);
         if (dateTo) list = list.filter((a) => a.date <= dateTo);
@@ -64,10 +67,30 @@ export default function WorkplaceHistoryPage() {
                 return name.toLowerCase().includes(q);
             });
         }
-        return list;
-    }, [appointments, filterStatus, dateFrom, dateTo, searchClient]);
 
-    const hasActiveFilters = filterStatus !== 'all' || dateFrom || dateTo || searchClient.trim();
+        if (filterPayment !== 'all') {
+            if (filterPayment === 'none') list = list.filter((a) => !a.payment_method);
+            else list = list.filter((a) => a.payment_method === filterPayment);
+        }
+
+        if (sortRating !== 'none') {
+            list.sort((a, b) => {
+                const ra = a.review ? a.review.rating : -1;
+                const rb = b.review ? b.review.rating : -1;
+                return sortRating === 'asc' ? ra - rb : rb - ra;
+            });
+        } else if (sortValue !== 'none') {
+            list.sort((a, b) => {
+                const va = a.paid_value != null ? Number(a.paid_value) : -1;
+                const vb = b.paid_value != null ? Number(b.paid_value) : -1;
+                return sortValue === 'asc' ? va - vb : vb - va;
+            });
+        }
+
+        return list;
+    }, [appointments, filterStatus, dateFrom, dateTo, searchClient, filterPayment, sortRating, sortValue]);
+
+    const hasActiveFilters = filterStatus !== 'all' || dateFrom || dateTo || searchClient.trim() || filterPayment !== 'all' || sortRating !== 'none' || sortValue !== 'none';
 
     return (
         <div className="min-h-screen gradient-bg">
@@ -122,7 +145,10 @@ export default function WorkplaceHistoryPage() {
                         </motion.button>
                         {hasActiveFilters && (
                             <button
-                                onClick={() => { setFilterStatus('all'); setDateFrom(''); setDateTo(''); setSearchClient(''); }}
+                                onClick={() => { 
+                                    setFilterStatus('all'); setDateFrom(''); setDateTo(''); setSearchClient('');
+                                    setFilterPayment('all'); setSortRating('none'); setSortValue('none'); 
+                                }}
                                 className="text-xs text-surface-200/40 hover:text-white transition-colors"
                             >
                                 {t('common.clear', 'Limpar')}
@@ -179,6 +205,57 @@ export default function WorkplaceHistoryPage() {
                                             <label className="text-xs text-surface-200/50 mb-1 block">{t('history.dateTo', 'Data fim')}</label>
                                             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
                                                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-surface-50 outline-none focus:border-brand-500" />
+                                        </div>
+                                    </div>
+
+                                    {/* Financial Filters */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
+                                        <div>
+                                            <label className="text-xs text-surface-200/50 mb-1 block">Pagamento</label>
+                                            <select
+                                                value={filterPayment}
+                                                onChange={(e) => setFilterPayment(e.target.value)}
+                                                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-surface-50 outline-none focus:border-brand-500"
+                                            >
+                                                <option value="all" className="bg-surface-900">Todos</option>
+                                                <option value="pix" className="bg-surface-900">PIX</option>
+                                                <option value="credit" className="bg-surface-900">Crédito</option>
+                                                <option value="debit" className="bg-surface-900">Débito</option>
+                                                <option value="boleto" className="bg-surface-900">Boleto</option>
+                                                <option value="cash" className="bg-surface-900">Dinheiro</option>
+                                                <option value="free" className="bg-surface-900">Grátis</option>
+                                                <option value="none" className="bg-surface-900">Sem Pagamento</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-surface-200/50 mb-1 block">Valor</label>
+                                            <select
+                                                value={sortValue}
+                                                onChange={(e) => {
+                                                    setSortValue(e.target.value);
+                                                    if (e.target.value !== 'none') setSortRating('none');
+                                                }}
+                                                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-surface-50 outline-none focus:border-brand-500"
+                                            >
+                                                <option value="none" className="bg-surface-900">Padrão</option>
+                                                <option value="asc" className="bg-surface-900">Menor valor</option>
+                                                <option value="desc" className="bg-surface-900">Maior valor</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-surface-200/50 mb-1 block">Avaliação</label>
+                                            <select
+                                                value={sortRating}
+                                                onChange={(e) => {
+                                                    setSortRating(e.target.value);
+                                                    if (e.target.value !== 'none') setSortValue('none');
+                                                }}
+                                                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-surface-50 outline-none focus:border-brand-500"
+                                            >
+                                                <option value="none" className="bg-surface-900">Padrão</option>
+                                                <option value="asc" className="bg-surface-900">Menor nota</option>
+                                                <option value="desc" className="bg-surface-900">Maior nota</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -245,6 +322,31 @@ export default function WorkplaceHistoryPage() {
                                                         {a.start_time?.substring(0, 5)} — {a.end_time?.substring(0, 5)}
                                                     </span>
                                                 </div>
+                                                {/* Payment & Review info */}
+                                                {a.status === 'completed' && (a.payment_method || a.paid_value != null || a.review) && (
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                        {a.payment_method && (
+                                                            <span className="rounded-md px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                                {{ pix: 'PIX', credit: 'Crédito', debit: 'Débito', boleto: 'Boleto', cash: 'Dinheiro', free: 'Grátis' }[a.payment_method] || a.payment_method}
+                                                            </span>
+                                                        )}
+                                                        {a.paid_value != null && a.payment_method !== 'free' && (
+                                                            <span className="text-xs font-semibold text-emerald-400">
+                                                                R$ {Number(a.paid_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                        )}
+                                                        {a.payment_method === 'free' && (
+                                                            <span className="text-xs text-surface-200/40">Gratuito</span>
+                                                        )}
+                                                        {a.review && (
+                                                            <span className="flex items-center gap-0.5 text-xs">
+                                                                {[...Array(5)].map((_, idx) => (
+                                                                    <span key={idx} className={idx < a.review.rating ? 'text-amber-400' : 'text-surface-200/20'}>★</span>
+                                                                ))}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1.5 shrink-0">
