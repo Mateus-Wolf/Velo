@@ -100,6 +100,7 @@ def cancel_appointment(
 def resolve_appointment(
     appointment_id: int,
     body: ResolveAppointmentRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -109,6 +110,8 @@ def resolve_appointment(
         new_status=body.new_status,
         paid_value=body.paid_value,
         payment_method=body.payment_method,
+        installments=body.installments,
+        background_tasks=background_tasks,
     )
 
 
@@ -116,6 +119,7 @@ def resolve_appointment(
 def complete_appointment(
     appointment_id: int,
     body: CompleteAppointmentRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -124,4 +128,6 @@ def complete_appointment(
         db, appointment_id, current_user.id,
         paid_value=body.paid_value,
         payment_method=body.payment_method,
+        installments=body.installments,
+        background_tasks=background_tasks,
     )

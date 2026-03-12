@@ -535,3 +535,102 @@ def appointment_price_changed_html(
     </body>
     </html>
     """
+
+
+def appointment_completed_html(
+    client_name: str,
+    professional_name: str,
+    time: str,
+    date: str,
+    workplace_name: str,
+    paid_value: str,
+    payment_method: str,
+    review_url: str,
+) -> str:
+    """Gera HTML para recibo de conclusão de agendamento e pedido de avaliação."""
+
+    payment_method_map = {
+        "pix": "PIX",
+        "credit": "Cartão de Crédito",
+        "debit": "Cartão de Débito",
+        "boleto": "Boleto",
+        "cash": "Dinheiro",
+        "free": "Gratuito",
+    }
+    method_display = payment_method_map.get(payment_method, payment_method)
+
+    paid_value_text = paid_value if paid_value else "Não informado"
+    if payment_method == "free":
+        paid_value_text = "Gratuito"
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); border-radius: 16px 16px 0 0; padding: 32px 24px; text-align: center;">
+                <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                    ✅ Atendimento Concluído
+                </h1>
+            </div>
+
+            <!-- Body -->
+            <div style="background-color: white; padding: 32px 24px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 24px; font-size: 16px; color: #111827; line-height: 1.7;">
+                    Olá, <strong>{client_name}</strong>. O seu atendimento com 
+                    <strong>{professional_name}</strong> foi finalizado com sucesso!
+                </p>
+
+                <div style="background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%); border-radius: 12px; padding: 20px; border: 1px solid #c7d2fe; margin-bottom: 24px;">
+                    <h2 style="margin: 0 0 12px; font-size: 16px; color: #4338ca;">Recibo de Atendimento</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280; width: 120px;">📅 Data</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{date}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">🕐 Horário</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{time}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">📍 Local</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{workplace_name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">💳 Método de Pagamento</td>
+                            <td style="padding: 6px 0; font-size: 14px; color: #111827; font-weight: 600;">{method_display}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; font-size: 14px; color: #6b7280;">💰 Valor Pago</td>
+                            <td style="padding: 6px 0; font-size: 16px; color: #6366f1; font-weight: 700;">{paid_value_text}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 12px; font-size: 18px; color: #111827;">Como foi o seu atendimento?</h3>
+                    <p style="margin: 0 0 16px; font-size: 14px; color: #4b5563;">
+                        Sua opinião é muito importante! Avalie o serviço prestado por <strong>{professional_name}</strong>.
+                    </p>
+                    <a href="{review_url}" style="display: inline-block; background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                        ⭐ Avaliar Atendimento
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f9fafb; border-radius: 0 0 16px 16px; padding: 20px 24px; text-align: center; border: 1px solid #e5e7eb; border-top: none;">
+                <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                    Este email foi enviado automaticamente pelo Velo.<br>
+                    Por favor, não responda a este email.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """

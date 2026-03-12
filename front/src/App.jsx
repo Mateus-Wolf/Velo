@@ -15,6 +15,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import NotificationToast from './components/NotificationToast';
 import ConfirmationPage from './pages/ConfirmationPage';
 import CancellationPage from './pages/CancellationPage';
+import ReviewPage from './pages/ReviewPage';
 import GlobalLoading from './components/GlobalLoading';
 import GeminiChatbot from './components/GeminiChatbot';
 import PendingAppointmentsPage from './pages/PendingAppointmentsPage';
@@ -79,6 +80,14 @@ export default function App() {
             element={
               <AnimatedPage>
                 <CancellationPage />
+              </AnimatedPage>
+            }
+          />
+          <Route
+            path="/avaliar"
+            element={
+              <AnimatedPage>
+                <ReviewPage />
               </AnimatedPage>
             }
           />

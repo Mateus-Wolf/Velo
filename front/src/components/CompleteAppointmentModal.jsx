@@ -6,6 +6,7 @@ import {
     HiOutlineCurrencyDollar,
 } from 'react-icons/hi';
 import { useTranslation } from 'react-i18next';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 const PAYMENT_METHODS = [
     { value: 'pix', label: 'PIX', icon: '📱' },
@@ -20,11 +21,13 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
     const { t } = useTranslation();
     const [paidValue, setPaidValue] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('');
+    const [installments, setInstallments] = useState(1);
 
     useEffect(() => {
         if (isOpen && appointment) {
-            setPaidValue(appointment.price != null ? String(appointment.price) : '');
+            setPaidValue(appointment.price != null ? formatCurrencyInput(appointment.price) : '');
             setPaymentMethod('');
+            setInstallments(1);
         }
     }, [isOpen, appointment]);
 
@@ -32,8 +35,9 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
 
     const handleConfirm = () => {
         onConfirm({
-            paid_value: isFree ? null : (paidValue ? parseFloat(paidValue) : null),
+            paid_value: isFree ? null : (paidValue ? parseCurrencyInput(paidValue) : null),
             payment_method: paymentMethod || null,
+            installments: paymentMethod === 'credit' ? installments : null,
         });
     };
 
@@ -111,6 +115,42 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
                             </div>
                         </div>
 
+                        {/* Parcelas (Apenas Crédito) */}
+                        <AnimatePresence>
+                            {paymentMethod === 'credit' && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }} 
+                                    animate={{ opacity: 1, height: 'auto' }} 
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="mb-4 overflow-hidden"
+                                >
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-surface-200/70">
+                                        ⏱️ {t('complete.installments', 'Número de parcelas')}
+                                    </label>
+                                    <div className="flex items-center gap-3">
+                                        <select
+                                            value={installments}
+                                            onChange={(e) => setInstallments(Number(e.target.value))}
+                                            className="w-1/3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                                        >
+                                            {[...Array(12)].map((_, i) => (
+                                                <option key={i + 1} value={i + 1} className="bg-surface-800 text-surface-50">
+                                                    {i + 1}x
+                                                </option>
+                                            ))}
+                                        </select>
+                                        
+                                        {installments > 1 && paidValue && (
+                                            <div className="flex-1 rounded-xl border border-brand-500/20 bg-brand-500/5 px-4 py-3 text-sm flex items-center justify-between">
+                                                <span className="text-surface-200/60 text-xs">{installments}x de</span>
+                                                <span className="font-bold text-brand-400">{fmtPrice(parseCurrencyInput(paidValue) / installments)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         {/* Valor Pago */}
                         <div className="mb-6">
                             <label className="mb-2 flex items-center gap-2 text-sm font-medium text-surface-200/70">
@@ -122,11 +162,9 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
                                     R$
                                 </span>
                                 <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
+                                    type="text"
                                     value={isFree ? '' : paidValue}
-                                    onChange={(e) => setPaidValue(e.target.value)}
+                                    onChange={(e) => setPaidValue(formatCurrencyInput(e.target.value))}
                                     disabled={isFree}
                                     placeholder={isFree ? 'Grátis' : '0,00'}
                                     className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed"

@@ -34,12 +34,14 @@ class ResolveAppointmentRequest(BaseModel):
     new_status: str  # completed | no_show | canceled_user
     paid_value: Optional[float] = None
     payment_method: Optional[str] = None  # pix | credit | debit | boleto | cash | free
+    installments: Optional[int] = None
 
 
 class CompleteAppointmentRequest(BaseModel):
     """Usado para concluir agendamentos diretamente da agenda (não-pendentes)."""
     paid_value: Optional[float] = None
     payment_method: Optional[str] = None  # pix | credit | debit | boleto | cash | free
+    installments: Optional[int] = None
 
 
 # ---------- Reviews ----------
@@ -74,6 +76,7 @@ class AppointmentResponse(BaseModel):
     price: Optional[float] = None
     paid_value: Optional[float] = None
     payment_method: Optional[str] = None
+    installments: Optional[int] = None
     recurrence_id: Optional[str] = None
     created_at: _dt.datetime
     client_name: Optional[str] = None

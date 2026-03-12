@@ -28,6 +28,7 @@ import { requestPushPermission, unsubscribePush, isPushEnabled } from '../servic
 import HeaderNav from '../components/HeaderNav';
 import SearchableClientSelect from '../components/SearchableClientSelect';
 import CompleteAppointmentModal from '../components/CompleteAppointmentModal';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_NAMES = [
@@ -294,7 +295,7 @@ function NotificationsModal({ isOpen, onClose, onSaved }) {
 /* ------------------------------------------------------------------ */
 /*  Edit Appointment Modal                                             */
 /* ------------------------------------------------------------------ */
-function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workplaces }) {
+function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workplaces, setToast }) {
     const { t } = useTranslation();
     const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '', end_time: '', price: '' });
     const [clients, setClients] = useState([]);
@@ -319,7 +320,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                 date: appointment.date,
                 start_time: fmtTime(appointment.start_time),
                 end_time: fmtTime(appointment.end_time),
-                price: appointment.price != null ? String(appointment.price) : '',
+                price: appointment.price != null ? formatCurrencyInput(appointment.price) : '',
             });
             setIsRecurring(!!appointment.is_recurring);
             setRecurrenceType(appointment.recurrence_type || 'weekly');
@@ -370,7 +371,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                 date: form.date,
                 start_time: form.start_time,
                 end_time: form.end_time,
-                price: form.price ? parseFloat(form.price) : null,
+                price: form.price ? parseCurrencyInput(form.price) : null,
                 is_recurring: isRecurring,
                 recurrence_type: isRecurring ? recurrenceType : null,
                 recurrence_value: isRecurring ? recurrenceValue : null,
@@ -379,7 +380,13 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
             onUpdated(data);
             onClose();
         } catch (err) {
-            setError(err.response?.data?.detail || t('calendar.modals.edit.errorUpdate', 'Erro ao atualizar.'));
+            const errorMsg = err.response?.data?.detail || t('calendar.modals.edit.errorUpdate', 'Erro ao atualizar.');
+            if (setToast) {
+                setToast({ type: 'error', message: errorMsg });
+                setTimeout(() => setToast(null), 4000);
+            } else {
+                setError(errorMsg);
+            }
         } finally { setLoading(false); }
     };
 
@@ -474,7 +481,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-surface-200/40 font-medium">R$</span>
-                                    <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update('price', e.target.value)}
+                                    <input type="text" value={form.price} onChange={(e) => update('price', formatCurrencyInput(e.target.value))}
                                         disabled={appointment?.status === 'confirmed'}
                                         placeholder="0,00"
                                         className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed" />
@@ -555,7 +562,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
 /* ------------------------------------------------------------------ */
 /*  Create Appointment Modal                                           */
 /* ------------------------------------------------------------------ */
-function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, selectedDate }) {
+function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, selectedDate, setToast }) {
     const { t } = useTranslation();
     const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '09:00', end_time: '10:00', price: '' });
     const [isRecurring, setIsRecurring] = useState(false);
@@ -621,7 +628,7 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                 date: form.date,
                 start_time: form.start_time,
                 end_time: form.end_time,
-                price: form.price ? parseFloat(form.price) : null,
+                price: form.price ? parseCurrencyInput(form.price) : null,
                 is_recurring: isRecurring,
                 recurrence_type: isRecurring ? recurrenceType : null,
                 recurrence_value: isRecurring ? recurrenceValue : null,
@@ -630,7 +637,13 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
             onCreated(data);
             onClose();
         } catch (err) {
-            setError(err.response?.data?.detail || t('calendar.modals.create.errorCreate', 'Erro ao criar agendamento.'));
+            const errorMsg = err.response?.data?.detail || t('calendar.modals.create.errorCreate', 'Erro ao criar agendamento.');
+            if (setToast) {
+                setToast({ type: 'error', message: errorMsg });
+                setTimeout(() => setToast(null), 4000);
+            } else {
+                setError(errorMsg);
+            }
         } finally { setLoading(false); }
     };
 
@@ -719,7 +732,7 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-surface-200/40 font-medium">R$</span>
-                                    <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => update('price', e.target.value)}
+                                    <input type="text" value={form.price} onChange={(e) => update('price', formatCurrencyInput(e.target.value))}
                                         placeholder="0,00"
                                         className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
                                 </div>
@@ -1609,6 +1622,7 @@ export default function CalendarPage() {
                 onCreated={handleCreated}
                 workplaces={workplaces}
                 selectedDate={selectedDate || today}
+                setToast={setToast}
             />
             <EditAppointmentModal
                 isOpen={!!editTarget}
@@ -1616,6 +1630,7 @@ export default function CalendarPage() {
                 onUpdated={handleUpdated}
                 appointment={editTarget}
                 workplaces={workplaces}
+                setToast={setToast}
             />
             <ConfirmCancelDialog
                 isOpen={!!cancelTarget}

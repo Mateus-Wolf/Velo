@@ -328,6 +328,7 @@ export default function WorkplaceHistoryPage() {
                                                         {a.payment_method && (
                                                             <span className="rounded-md px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                                                 {{ pix: 'PIX', credit: 'Crédito', debit: 'Débito', boleto: 'Boleto', cash: 'Dinheiro', free: 'Grátis' }[a.payment_method] || a.payment_method}
+                                                                {(a.payment_method === 'credit' && a.installments > 1) && ` (${a.installments}x)`}
                                                             </span>
                                                         )}
                                                         {a.paid_value != null && a.payment_method !== 'free' && (

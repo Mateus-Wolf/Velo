@@ -9,7 +9,13 @@ from app.models.workplace import Workplace
 from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, VALID_PAYMENT_METHODS
 from app.config import settings
 from app.services.email_service import send_email
-from app.services.email_templates import appointment_confirmation_request_html, appointment_rescheduled_request_html, appointment_package_html, appointment_price_changed_html
+from app.services.email_templates import (
+    appointment_confirmation_request_html,
+    appointment_rescheduled_request_html,
+    appointment_package_html,
+    appointment_price_changed_html,
+    appointment_completed_html,
+)
 from app.auth.security import create_appointment_token
 from app.services.holiday_service import is_holiday
 import uuid
@@ -405,6 +411,8 @@ VALID_RESOLVE_STATUSES = ["completed", "no_show", "canceled_user"]
 def resolve_appointment(
     db: Session, appointment_id: int, user_id: int, new_status: str,
     paid_value: Optional[float] = None, payment_method: Optional[str] = None,
+    installments: Optional[int] = None,
+    background_tasks: Optional[BackgroundTasks] = None,
 ) -> Appointment:
     """Resolve um agendamento pendente definindo seu status final."""
     if new_status not in VALID_RESOLVE_STATUSES:
@@ -432,15 +440,49 @@ def resolve_appointment(
             )
         appointment.payment_method = payment_method
         appointment.paid_value = None if payment_method == "free" else paid_value
+        if payment_method == "credit":
+            appointment.installments = installments
+        else:
+            appointment.installments = None
     
     db.commit()
     db.refresh(appointment)
+    
+    if new_status == "completed" and background_tasks and appointment.client.email:
+        _send_completion_email(appointment, background_tasks)
+        
     return appointment
+
+
+def _send_completion_email(appointment: Appointment, background_tasks: BackgroundTasks):
+    """Auxiliar para enviar e-mail de conclusão e pedido de avaliação."""
+    tv = appointment.confirmation_token_version
+    # We create a token specifically for the review page, maybe action="review"
+    token_review = create_appointment_token(appointment.id, "review", token_version=tv)
+    review_url = f"{settings.FRONTEND_URL}/avaliar?token={token_review}"
+    
+    paid_value_display = None
+    if appointment.paid_value is not None:
+        paid_value_display = f"R$ {float(appointment.paid_value):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    
+    html_body = appointment_completed_html(
+        client_name=appointment.client.name,
+        professional_name=appointment.user.name,
+        time=appointment.start_time.strftime("%H:%M"),
+        date=appointment.date.strftime("%d/%m/%Y"),
+        workplace_name=appointment.workplace.name,
+        paid_value=paid_value_display,
+        payment_method=appointment.payment_method or "free",
+        review_url=review_url,
+    )
+    background_tasks.add_task(send_email, appointment.client.email, "Atendimento Concluído - Seu Recibo e Avaliação", html_body)
 
 
 def complete_appointment(
     db: Session, appointment_id: int, user_id: int,
     paid_value: Optional[float] = None, payment_method: Optional[str] = None,
+    installments: Optional[int] = None,
+    background_tasks: Optional[BackgroundTasks] = None,
 ) -> Appointment:
     """Conclui um agendamento ativo (scheduled/confirmed) diretamente da agenda."""
     appointment = get_appointment(db, appointment_id, user_id)
@@ -461,8 +503,15 @@ def complete_appointment(
             )
         appointment.payment_method = payment_method
         appointment.paid_value = None if payment_method == "free" else paid_value
+        if payment_method == "credit":
+            appointment.installments = installments
+        else:
+            appointment.installments = None
     
     db.commit()
     db.refresh(appointment)
+    
+    if background_tasks and appointment.client.email:
+        _send_completion_email(appointment, background_tasks)
+        
     return appointment
-

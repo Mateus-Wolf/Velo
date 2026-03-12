@@ -32,6 +32,7 @@ class Appointment(Base):
         sa.String(20), nullable=True,
         doc="Método de pagamento: pix, credit, debit, boleto, cash, free",
     )
+    installments = sa.Column(sa.Integer, nullable=True, doc="Número de parcelas (para crédito)")
     confirmation_token_version = sa.Column(
         sa.Integer, nullable=False, default=1,
         doc="Versão do token de confirmação; incrementada ao alterar preço antes de confirmar",

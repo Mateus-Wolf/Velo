@@ -14,6 +14,7 @@ import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import HeaderNav from '../components/HeaderNav';
 import { useTranslation } from 'react-i18next';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 export default function FinancialPage() {
     const { t } = useTranslation();
@@ -22,7 +23,7 @@ export default function FinancialPage() {
 
     const [metrics, setMetrics] = useState(null);
     const [loadingMetrics, setLoadingMetrics] = useState(true);
-    const [goalInput, setGoalInput] = useState(() => user?.monthly_goal || 0);
+    const [goalInput, setGoalInput] = useState(() => user?.monthly_goal ? formatCurrencyInput(user.monthly_goal) : '');
     const [isSavingGoal, setIsSavingGoal] = useState(false);
 
     const [projection, setProjection] = useState(null);
@@ -86,7 +87,8 @@ export default function FinancialPage() {
     const handleSaveGoal = async () => {
         setIsSavingGoal(true);
         try {
-            const { data } = await api.put('/financial/goal', { goal_value: parseFloat(goalInput) });
+            const parsedGoal = parseCurrencyInput(goalInput) || 0;
+            const { data } = await api.put('/financial/goal', { goal_value: parsedGoal });
             updateUser({ ...user, monthly_goal: data.monthly_goal });
             // Refresh everything after saving
             await Promise.all([fetchMetrics(), fetchHistory()]);
@@ -231,18 +233,16 @@ export default function FinancialPage() {
                         <div className="flex items-center gap-3 mb-6">
                             <span className="text-surface-200/50 text-sm font-medium">R$</span>
                             <input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                                type="text"
                                 value={goalInput}
-                                onChange={(e) => setGoalInput(e.target.value)}
+                                onChange={(e) => setGoalInput(formatCurrencyInput(e.target.value))}
                                 className="flex-1 appearance-none rounded-xl border border-white/10 bg-white/5 py-3 px-4 text-base font-semibold text-surface-50 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 hover:bg-white/10 transition-colors"
-                                placeholder="0.00"
+                                placeholder="0,00"
                             />
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
-                                disabled={isSavingGoal || (user?.monthly_goal == goalInput)}
+                                disabled={isSavingGoal || (user?.monthly_goal == parseCurrencyInput(goalInput))}
                                 onClick={handleSaveGoal}
                                 className="rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-5 py-3 text-sm font-semibold transition-all disabled:opacity-40"
                             >
