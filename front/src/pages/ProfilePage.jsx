@@ -80,6 +80,7 @@ export default function ProfilePage() {
     const { t, i18n } = useTranslation();
     const { user, setUser } = useAuthStore();
     const fileInputRef = useRef(null);
+    const isStaff = user?.role === 'staff';
 
     const [toast, setToast] = useState(null);
     const showToast = (type, message) => {
@@ -236,7 +237,9 @@ export default function ProfilePage() {
                         </button>
                         <div>
                             <h1 className="text-lg font-bold text-gradient">{t('profile.title')}</h1>
-                            <p className="text-xs text-surface-200/40">Gerencie suas informações</p>
+                            <p className="text-xs text-surface-200/40">
+                                {isStaff ? 'Visualização do perfil (somente leitura)' : 'Gerencie suas informações'}
+                            </p>
                         </div>
                     </div>
                     <UserDropdown />
@@ -291,7 +294,8 @@ export default function ProfilePage() {
                             <div className="relative">
                                 <HiOutlineUser size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-200/30" />
                                 <input value={name} onChange={(e) => setName(e.target.value)}
-                                    className={`${inputClass} pl-10`} placeholder="Seu nome" />
+                                    disabled={isStaff}
+                                    className={`${inputClass} pl-10 ${isStaff ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Seu nome" />
                             </div>
                         </div>
                         <div>
@@ -299,19 +303,23 @@ export default function ProfilePage() {
                             <div className="relative">
                                 <HiOutlineMail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-200/30" />
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                    className={`${inputClass} pl-10`} placeholder="seu@email.com" />
+                                    disabled={isStaff}
+                                    className={`${inputClass} pl-10 ${isStaff ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="seu@email.com" />
                             </div>
                         </div>
+                        {!isStaff && (
                         <motion.button type="submit" disabled={infoLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                             className="rounded-xl gradient-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 disabled:opacity-60 flex items-center gap-2">
                             {infoLoading ? (
                                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                             ) : <><HiOutlineCheck size={16} /> {t('profile.save')}</>}
                         </motion.button>
+                        )}
                     </form>
                 </Section>
 
-                {/* ---- Password Section ---- */}
+                {/* ---- Password Section (admin only) ---- */}
+                {!isStaff && (
                 <Section title="Alterar Senha" icon={HiOutlineLockClosed}>
                     <form onSubmit={handleChangePw} className="space-y-4">
                         <div>
@@ -352,8 +360,10 @@ export default function ProfilePage() {
                         </motion.button>
                     </form>
                 </Section>
+                )}
 
-                {/* ---- 2FA Section ---- */}
+                {/* ---- 2FA Section (admin only) ---- */}
+                {!isStaff && (
                 <Section title="Verificação em Duas Etapas" icon={HiOutlineShieldCheck}>
                     <div className="flex items-center justify-between">
                         <div>
@@ -390,6 +400,7 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </Section>
+                )}
 
             </main>
 

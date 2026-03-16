@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ProfilePage from './pages/ProfilePage';
@@ -12,6 +13,7 @@ import ClientHistoryPage from './pages/ClientHistoryPage';
 import WorkplaceHistoryPage from './pages/WorkplaceHistoryPage';
 import UserHistoryPage from './pages/UserHistoryPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AdminRoute } from './components/ProtectedRoute';
 import NotificationToast from './components/NotificationToast';
 import ConfirmationPage from './pages/ConfirmationPage';
 import CancellationPage from './pages/CancellationPage';
@@ -19,6 +21,7 @@ import ReviewPage from './pages/ReviewPage';
 import GlobalLoading from './components/GlobalLoading';
 import GeminiChatbot from './components/GeminiChatbot';
 import PendingAppointmentsPage from './pages/PendingAppointmentsPage';
+import TeamPage from './pages/TeamPage';
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -46,6 +49,17 @@ export default function App() {
 
   return (
     <>
+      <Toaster 
+        position="top-center" 
+        toastOptions={{
+          className: '!bg-surface-900 !text-white !border !border-white/10 !rounded-xl',
+          style: {
+            background: '#18181b', // Corresponde a surface-900 ou próximo
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          },
+        }} 
+      />
       <NotificationToast />
       <GlobalLoading />
       <GeminiChatbot />
@@ -102,7 +116,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* Workplaces listing */}
+          {/* Workplaces listing — visible but read-only for staff */}
           <Route
             path="/workplaces"
             element={
@@ -113,26 +127,26 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* Metrics Dashboard */}
+          {/* Metrics Dashboard — admin only */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AnimatedPage>
                   <MetricsDashboardPage />
                 </AnimatedPage>
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
-          {/* Financial */}
+          {/* Financial — admin only */}
           <Route
             path="/financeiro"
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AnimatedPage>
                   <FinancialPage />
                 </AnimatedPage>
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
           {/* Workplace clients */}
@@ -179,18 +193,18 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* Pending Appointments */}
+          {/* Pending Appointments — admin only */}
           <Route
             path="/pendentes"
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AnimatedPage>
                   <PendingAppointmentsPage />
                 </AnimatedPage>
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
-          {/* Profile */}
+          {/* Profile — accessible by all but staff sees read-only */}
           <Route
             path="/profile"
             element={
@@ -199,6 +213,17 @@ export default function App() {
                   <ProfilePage />
                 </AnimatedPage>
               </ProtectedRoute>
+            }
+          />
+          {/* Team Management — admin only */}
+          <Route
+            path="/equipe"
+            element={
+              <AdminRoute>
+                <AnimatedPage>
+                  <TeamPage />
+                </AnimatedPage>
+              </AdminRoute>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -33,6 +33,7 @@ export default function GeminiChatbot() {
 
     // Auth State
     const token = useAuthStore((state) => state.token);
+    const user = useAuthStore((state) => state.user);
 
     const messagesEndRef = useRef(null);
     const modalRef = useRef(null);
@@ -96,7 +97,7 @@ export default function GeminiChatbot() {
         }
     }, [sessions, currentSessionId, isOpen, showHistory]);
 
-    if (!token) return null;
+    if (!token || user?.role !== 'admin') return null;
 
     // --- Core Session Functions ---
     const createNewSession = () => {

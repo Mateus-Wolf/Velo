@@ -11,23 +11,33 @@ import {
 import { useTranslation } from 'react-i18next';
 import UserDropdown from './UserDropdown';
 import NotificationCenter from './NotificationCenter';
+import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 
-const NAV_ITEMS = [
-    { path: '/', icon: HiOutlineCalendar, labelKey: 'nav.agenda', fallback: 'Agenda' },
-    { path: '/workplaces', icon: HiOutlineOfficeBuilding, labelKey: 'nav.workplaces', fallback: 'Locais' },
-    { path: '/dashboard', icon: HiOutlineChartBar, labelKey: 'nav.dashboard', fallback: 'Dashboard' },
-    { path: '/financeiro', icon: HiOutlineCurrencyDollar, labelKey: 'nav.financial', fallback: 'Financeiro' },
-    { path: '/pendentes', icon: HiOutlineClock, labelKey: 'nav.pending', fallback: 'Pendentes' },
+const ALL_NAV_ITEMS = [
+    { path: '/', icon: HiOutlineCalendar, labelKey: 'nav.agenda', fallback: 'Agenda', adminOnly: false },
+    { path: '/workplaces', icon: HiOutlineOfficeBuilding, labelKey: 'nav.workplaces', fallback: 'Locais', adminOnly: false },
+    { path: '/dashboard', icon: HiOutlineChartBar, labelKey: 'nav.dashboard', fallback: 'Dashboard', adminOnly: true },
+    { path: '/financeiro', icon: HiOutlineCurrencyDollar, labelKey: 'nav.financial', fallback: 'Financeiro', adminOnly: true },
+    { path: '/pendentes', icon: HiOutlineClock, labelKey: 'nav.pending', fallback: 'Pendentes', adminOnly: true },
 ];
 
 export default function HeaderNav() {
     const navigate = useNavigate();
     const location = useLocation();
     const { t } = useTranslation();
+    const user = useAuthStore((s) => s.user);
     const [pendingCount, setPendingCount] = useState(0);
 
+    const isStaff = user?.role === 'staff';
+
+    // Filter nav items based on role
+    const NAV_ITEMS = isStaff
+        ? ALL_NAV_ITEMS.filter((item) => !item.adminOnly)
+        : ALL_NAV_ITEMS;
+
     useEffect(() => {
+        if (isStaff) return; // Staff doesn't see pending count
         const fetchPending = async () => {
             try {
                 const res = await api.get('/appointments/pending-count');
@@ -35,7 +45,7 @@ export default function HeaderNav() {
             } catch { /* silently ignore */ }
         };
         fetchPending();
-    }, []);
+    }, [isStaff]);
 
     return (
         <nav className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">
@@ -44,6 +54,11 @@ export default function HeaderNav() {
                 <div className="flex items-center gap-3">
                     <img src="/favicon.png" alt="Velo Icon" className="h-9 w-9 object-contain drop-shadow-sm" />
                     <span className="text-lg font-bold text-gradient hidden sm:inline">Velo</span>
+                    {isStaff && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 hidden sm:inline">
+                            Staff
+                        </span>
+                    )}
                 </div>
 
                 {/* Nav Links + Notification Center + Dropdown */}
@@ -88,4 +103,3 @@ export default function HeaderNav() {
         </nav>
     );
 }
-

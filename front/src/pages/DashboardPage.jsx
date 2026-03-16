@@ -91,6 +91,7 @@ function ConfirmDeleteDialog({ isOpen, onClose, onConfirm, title, description, l
 function WorkplaceCard({ workplace, index, onEdit, onDelete }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { user } = useAuthStore();
 
     const days = workplace.work_days
         .split(',')
@@ -163,27 +164,32 @@ function WorkplaceCard({ workplace, index, onEdit, onDelete }) {
                             <HiOutlineClipboardList size={14} />
                         </motion.button>
 
-                        {/* Edit */}
-                        <motion.button
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleEditClick}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-surface-200/50 hover:bg-brand-600/20 hover:text-brand-400 hover:border-brand-500/30 transition-all opacity-0 group-hover:opacity-100"
-                            title={t('workplaces.card.edit', 'Editar local')}
-                        >
-                            <HiOutlinePencil size={14} />
-                        </motion.button>
+                        {/* Admin-only actions */}
+                        {user?.role === 'admin' && (
+                            <>
+                                {/* Edit */}
+                                <motion.button
+                                    whileHover={{ scale: 1.15 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={handleEditClick}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-surface-200/50 hover:bg-brand-600/20 hover:text-brand-400 hover:border-brand-500/30 transition-all opacity-0 group-hover:opacity-100"
+                                    title={t('workplaces.card.edit', 'Editar local')}
+                                >
+                                    <HiOutlinePencil size={14} />
+                                </motion.button>
 
-                        {/* Delete */}
-                        <motion.button
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleDeleteClick}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-surface-200/50 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 transition-all opacity-0 group-hover:opacity-100"
-                            title={t('workplaces.card.delete', 'Excluir local')}
-                        >
-                            <HiOutlineTrash size={14} />
-                        </motion.button>
+                                {/* Delete */}
+                                <motion.button
+                                    whileHover={{ scale: 1.15 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={handleDeleteClick}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-surface-200/50 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 transition-all opacity-0 group-hover:opacity-100"
+                                    title={t('workplaces.card.delete', 'Excluir local')}
+                                >
+                                    <HiOutlineTrash size={14} />
+                                </motion.button>
+                            </>
+                        )}
 
                         <span
                             className={`ml-1 rounded-full px-3 py-1 text-xs font-medium ${workplace.is_active
@@ -321,6 +327,14 @@ export default function DashboardPage() {
     };
 
     const openCreate = () => {
+        // Prevent creation if user has multiple_workplaces disabled and already has one
+        if (user && !user.multiple_workplaces && workplaces.length > 0) {
+            import('react-hot-toast').then(toast => {
+                toast.default.error(t('workplaces.creationDisabled', 'Você já possui um local de trabalho ativo. Ative "Trabalho em múltiplos locais" nas configurações.'));
+            });
+            return;
+        }
+
         setEditingWorkplace(null);
         setModalOpen(true);
     };
@@ -383,7 +397,7 @@ export default function DashboardPage() {
                         </motion.p>
                     </div>
 
-                    {workplaces.length > 0 && (
+                    {workplaces.length > 0 && user?.role === 'admin' && (
                         <motion.button
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -482,8 +496,8 @@ export default function DashboardPage() {
                 )}
             </main>
 
-            {/* FAB (mobile) */}
-            {workplaces.length > 0 && (
+            {/* FAB (mobile) - Admin only */}
+            {workplaces.length > 0 && user?.role === 'admin' && (
                 <motion.button
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}

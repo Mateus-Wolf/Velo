@@ -21,6 +21,7 @@ class WorkplaceCreate(BaseModel):
     break_start_time: Optional[time] = None
     break_end_time: Optional[time] = None
     works_on_holidays: bool = False
+    buffer_time: Optional[int] = 0
 
 
 class WorkplaceUpdate(BaseModel):
@@ -36,6 +37,8 @@ class WorkplaceUpdate(BaseModel):
     break_start_time: Optional[time] = None
     break_end_time: Optional[time] = None
     works_on_holidays: Optional[bool] = None
+    is_active: Optional[bool] = None
+    buffer_time: Optional[int] = None
 
 
 # ---------- Saída ----------
@@ -56,6 +59,7 @@ class WorkplaceResponse(BaseModel):
     break_end_time: Optional[time] = None
     is_active: bool
     works_on_holidays: bool
+    buffer_time: int = 0
     created_at: datetime
 
     model_config = {"from_attributes": True}

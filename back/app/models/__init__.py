@@ -11,6 +11,8 @@ from app.models.recognized_device import RecognizedDevice
 from app.models.goal_history import GoalHistory
 from app.models.push_subscription import PushSubscription
 from app.models.review import Review
+from app.models.staff_member import StaffMember
+from app.models.staff_workplace_access import StaffWorkplaceAccess
 
 __all__ = [
     "User",
@@ -26,5 +28,7 @@ __all__ = [
     "GoalHistory",
     "PushSubscription",
     "Review",
+    "StaffMember",
+    "StaffWorkplaceAccess",
 ]
 

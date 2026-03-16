@@ -22,6 +22,7 @@ class Workplace(Base):
     break_end_time = sa.Column(sa.Time, nullable=True)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
     works_on_holidays = sa.Column(sa.Boolean, default=False, nullable=False)
+    buffer_time = sa.Column(sa.Integer, default=0, nullable=False)
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=sa.func.now())
 
     # Relacionamentos

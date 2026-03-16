@@ -21,11 +21,13 @@ from app.auth.security import (
     create_refresh_token,
     decode_access_token,
     hash_password,
+    verify_password,
 )
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, get_current_account, CurrentAccount
 from app.models.user import User
 from app.models.password_reset import PasswordReset
 from app.models.recognized_device import RecognizedDevice
+from app.models.staff_member import StaffMember
 from app.services.email_service import send_email
 from app.services.email_templates import password_reset_code, two_factor_code_html
 
@@ -45,9 +47,34 @@ def login(
     remember_me: bool = Form(False),
     device_id: str = Form(None)
 ):
-    """Login — retorna access_token e refresh_token JWT. Se tiver 2FA ativo, retorna requires_2fa."""
+    """Login — retorna access_token e refresh_token JWT. Se tiver 2FA ativo, retorna requires_2fa.
+    Suporta login de admin (users) e staff (staff_members)."""
     user = authenticate_user(db, form_data.username, form_data.password)
+
+    # ---------- Tentar login como staff ----------
     if not user:
+        staff = db.query(StaffMember).filter(
+            StaffMember.email == form_data.username,
+            StaffMember.is_active == True,
+        ).first()
+        if staff and verify_password(form_data.password, staff.password_hash):
+            # Login de staff — gera token com role=staff
+            access_delta = timedelta(days=20) if remember_me else None
+            refresh_delta = timedelta(days=20) if remember_me else None
+            token_data = {
+                "sub": str(staff.admin_user_id),
+                "role": "staff",
+                "staff_id": str(staff.id),
+                "admin_id": str(staff.admin_user_id),
+            }
+            access_token = create_access_token(data=token_data, expires_delta=access_delta)
+            refresh_token = create_refresh_token(data=token_data, expires_delta=refresh_delta)
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer",
+            }
+        # Nem admin nem staff
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha incorretos",
@@ -132,8 +159,17 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
             detail="Usuário não encontrado",
         )
 
-    new_access = create_access_token(data={"sub": str(user.id)})
-    new_refresh = create_refresh_token(data={"sub": str(user.id)})
+    # Preservar dados de staff se existirem no token original
+    token_data = {"sub": str(user.id)}
+    if payload.get("role"):
+        token_data["role"] = payload.get("role")
+    if payload.get("staff_id"):
+        token_data["staff_id"] = payload.get("staff_id")
+    if payload.get("admin_id"):
+        token_data["admin_id"] = payload.get("admin_id")
+
+    new_access = create_access_token(data=token_data)
+    new_refresh = create_refresh_token(data=token_data)
     return {
         "access_token": new_access,
         "refresh_token": new_refresh,
@@ -141,10 +177,30 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/me", response_model=UserResponse)
-def me(current_user: User = Depends(get_current_user)):
-    """Retorna dados do usuário autenticado."""
-    return current_user
+@router.get("/me")
+def me(account: CurrentAccount = Depends(get_current_account)):
+    """Retorna dados do usuário autenticado — inclui role e permissions para staff."""
+    user = account.user
+    base = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "avatar_url": user.avatar_url,
+        "two_factor_enabled": user.two_factor_enabled,
+        "monthly_goal": user.monthly_goal,
+        "multiple_workplaces": user.multiple_workplaces,
+        "role": account.role,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+    }
+    if account.role == "staff":
+        staff = account.staff
+        base["name"] = staff.name
+        base["email"] = staff.email
+        base["staff_id"] = staff.id
+        base["admin_id"] = user.id
+        base["permissions"] = account.permissions
+    return base
 
 
 # ------------------------------------------------------------------ #

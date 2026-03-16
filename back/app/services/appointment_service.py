@@ -80,23 +80,59 @@ def _validate_appointment(db: Session, user_id: int, data: Dict, exclude_id: Opt
                     detail="O local selecionado não possui expediente em feriados.",
                 )
 
-    # 4. Verificar conflito de horário no mesmo local
+    # 4. Verificar conflito de horário no mesmo local (com buffer time)
     if workplace_id and appt_date and start_time and end_time:
+        buffer_minutes = workplace.buffer_time if workplace and workplace.buffer_time else 0
+        buffer = timedelta(minutes=buffer_minutes)
+
+        # Converter times para datetime para aritmética com buffer
+        ref_date = appt_date
+        start_dt = datetime.combine(ref_date, start_time)
+        end_dt = datetime.combine(ref_date, end_time)
+        buffered_start = (start_dt - buffer).time()
+        buffered_end = (end_dt + buffer).time()
+
         conflict_query = db.query(Appointment).filter(
             Appointment.workplace_id == workplace_id,
             Appointment.date == appt_date,
             ~Appointment.status.in_(INACTIVE_STATUSES),
-            Appointment.start_time < end_time,
-            Appointment.end_time > start_time,
+            Appointment.start_time < buffered_end,
+            Appointment.end_time > buffered_start,
         )
         if exclude_id:
             conflict_query = conflict_query.filter(Appointment.id != exclude_id)
 
         if conflict_query.first():
+            if buffer_minutes > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Conflito de horário neste local (inclui intervalo de {buffer_minutes} min entre consultas)",
+                )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Conflito de horário neste local",
             )
+
+        # 5. Verificar conflito cross-workplace (buffer de deslocamento do local original)
+        from app.models.user import User
+        user = db.query(User).filter(User.id == user_id).first()
+        if user and user.multiple_workplaces and buffer_minutes > 0:
+            cross_conflict = db.query(Appointment).filter(
+                Appointment.user_id == user_id,
+                Appointment.workplace_id != workplace_id,
+                Appointment.date == appt_date,
+                ~Appointment.status.in_(INACTIVE_STATUSES),
+                Appointment.start_time < buffered_end,
+                Appointment.end_time > buffered_start,
+            )
+            if exclude_id:
+                cross_conflict = cross_conflict.filter(Appointment.id != exclude_id)
+
+            if cross_conflict.first():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Conflito com agendamento em outro local (intervalo de {buffer_minutes} min para deslocamento)",
+                )
 
 
 def _auto_mark_pending(db: Session, user_id: int) -> None:

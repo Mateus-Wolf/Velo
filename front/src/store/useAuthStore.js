@@ -16,6 +16,17 @@ const useAuthStore = create((set) => ({
     isLoading: false,
     error: null,
 
+    // Computed helpers
+    isAdmin: () => {
+        const user = JSON.parse(localStorage.getItem('velo_user') || sessionStorage.getItem('velo_user') || 'null');
+        return !user || user.role === 'admin';
+    },
+
+    isStaff: () => {
+        const user = JSON.parse(localStorage.getItem('velo_user') || sessionStorage.getItem('velo_user') || 'null');
+        return user?.role === 'staff';
+    },
+
     login: async (email, password, rememberMe = false) => {
         set({ isLoading: true, error: null });
         try {
@@ -95,10 +106,10 @@ const useAuthStore = create((set) => ({
         }
     },
 
-    register: async (name, email, password) => {
+    register: async (name, email, password, multipleWorkplaces) => {
         set({ isLoading: true, error: null });
         try {
-            await api.post('/auth/register', { name, email, password });
+            await api.post('/auth/register', { name, email, password, multiple_workplaces: multipleWorkplaces });
 
             // Auto-login after register
             const formData = new URLSearchParams();

@@ -7,6 +7,7 @@ import {
     HiOutlineLogout,
     HiOutlineChevronDown,
     HiOutlineCog,
+    HiOutlineUserGroup,
 } from 'react-icons/hi';
 import useAuthStore from '../store/useAuthStore';
 import SettingsModal from './SettingsModal';
@@ -20,6 +21,7 @@ export default function UserDropdown() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const ref = useRef(null);
 
+    const isStaff = user?.role === 'staff';
     const firstName = user?.name?.split(' ')[0] || t('dropdown.user', 'Usuário');
 
     // Close on outside click
@@ -42,6 +44,11 @@ export default function UserDropdown() {
                     <HiOutlineUser size={13} />
                 </div>
                 <span className="hidden sm:inline font-medium text-surface-50">{firstName}</span>
+                {isStaff && (
+                    <span className="hidden sm:inline text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-brand-500/20 text-brand-300">
+                        Staff
+                    </span>
+                )}
                 <HiOutlineChevronDown
                     size={14}
                     className={`text-surface-200/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
@@ -59,6 +66,9 @@ export default function UserDropdown() {
                     >
                         <div className="px-3 py-2.5 border-b border-white/5">
                             <p className="text-xs text-surface-200/40 truncate">{user?.email}</p>
+                            {isStaff && (
+                                <p className="text-[10px] text-brand-400 mt-0.5 font-medium">Funcionário(a)</p>
+                            )}
                         </div>
 
                         <div className="py-1">
@@ -69,6 +79,7 @@ export default function UserDropdown() {
                             >
                                 <HiOutlineUser size={16} />
                                 {t('dropdown.profile', 'Perfil')}
+                                {isStaff && <span className="ml-auto text-[9px] text-surface-200/30">(somente leitura)</span>}
                             </button>
 
                             {/* Histórico */}
@@ -80,14 +91,27 @@ export default function UserDropdown() {
                                 {t('dropdown.history', 'Histórico')}
                             </button>
 
-                            {/* Configurações */}
-                            <button
-                                onClick={() => { setOpen(false); setIsSettingsOpen(true); }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-surface-200/70 hover:bg-white/5 hover:text-white transition-colors"
-                            >
-                                <HiOutlineCog size={16} />
-                                {t('dropdown.settings', 'Configurações')}
-                            </button>
+                            {/* Equipe — somente admin */}
+                            {!isStaff && (
+                                <button
+                                    onClick={() => { setOpen(false); navigate('/equipe'); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-surface-200/70 hover:bg-white/5 hover:text-white transition-colors"
+                                >
+                                    <HiOutlineUserGroup size={16} />
+                                    {t('dropdown.team', 'Equipe')}
+                                </button>
+                            )}
+
+                            {/* Configurações — somente admin */}
+                            {!isStaff && (
+                                <button
+                                    onClick={() => { setOpen(false); setIsSettingsOpen(true); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-surface-200/70 hover:bg-white/5 hover:text-white transition-colors"
+                                >
+                                    <HiOutlineCog size={16} />
+                                    {t('dropdown.settings', 'Configurações')}
+                                </button>
+                            )}
                         </div>
 
                         <div className="border-t border-white/5 py-1">

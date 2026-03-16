@@ -57,8 +57,8 @@ export default function WorkplaceModal({ isOpen, onClose, onCreated, onUpdated, 
         work_days: [],
         start_time: '08:00',
         end_time: '18:00',
-        break_start_time: '',
         break_end_time: '',
+        buffer_time: 0,
         is_active: true,
         works_on_holidays: false,
     });
@@ -82,6 +82,7 @@ export default function WorkplaceModal({ isOpen, onClose, onCreated, onUpdated, 
                 end_time: workplace.end_time ? workplace.end_time.substring(0, 5) : '18:00',
                 break_start_time: workplace.break_start_time ? workplace.break_start_time.substring(0, 5) : '',
                 break_end_time: workplace.break_end_time ? workplace.break_end_time.substring(0, 5) : '',
+                buffer_time: workplace.buffer_time ?? 0,
                 is_active: workplace.is_active !== false,
                 works_on_holidays: !!workplace.works_on_holidays,
             });
@@ -100,6 +101,7 @@ export default function WorkplaceModal({ isOpen, onClose, onCreated, onUpdated, 
                 end_time: '18:00',
                 break_start_time: '',
                 break_end_time: '',
+                buffer_time: 0,
                 is_active: true,
                 works_on_holidays: false,
             });
@@ -205,6 +207,7 @@ export default function WorkplaceModal({ isOpen, onClose, onCreated, onUpdated, 
                 end_time: form.end_time,
                 break_start_time: hasBreak ? (form.break_start_time || null) : null,
                 break_end_time: hasBreak ? (form.break_end_time || null) : null,
+                buffer_time: parseInt(form.buffer_time, 10),
                 works_on_holidays: form.works_on_holidays,
             };
 
@@ -504,26 +507,53 @@ export default function WorkplaceModal({ isOpen, onClose, onCreated, onUpdated, 
 
                             {/* Works on Holidays toggle */}
                             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="flex items-center justify-between">
+        <div>
+            <p className="text-sm font-medium text-surface-200">{t('workplaces.modal.holidays', 'Trabalha em feriados')}</p>
+            <p className="text-xs text-surface-200/50 mt-0.5">
+                {t('workplaces.modal.holidaysDesc', 'Permitir agendamentos em dias de feriado')}
+            </p>
+        </div>
+        <button
+            type="button"
+            onClick={() => update('works_on_holidays', !form.works_on_holidays)}
+            className={`relative h-7 w-12 rounded-full transition-colors duration-300 ${form.works_on_holidays ? 'bg-brand-500' : 'bg-surface-700'
+                }`}
+        >
+            <motion.div
+                layout
+                className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-md"
+                style={{ left: form.works_on_holidays ? 'calc(100% - 1.625rem)' : '0.125rem' }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
+        </button>
+    </div>
+</div>
+
+                            {/* Buffer Time */}
+                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm font-medium text-surface-200">{t('workplaces.modal.holidays', 'Trabalha em feriados')}</p>
-                                        <p className="text-xs text-surface-200/50 mt-0.5">
-                                            {t('workplaces.modal.holidaysDesc', 'Permitir agendamentos em dias de feriado')}
-                                        </p>
+                                        <p className="text-sm font-medium text-surface-200">Intervalo entre consultas</p>
+                                        <p className="text-xs text-surface-200/50 mt-0.5">Tempo de preparo ou deslocamento a partir deste local</p>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => update('works_on_holidays', !form.works_on_holidays)}
-                                        className={`relative h-7 w-12 rounded-full transition-colors duration-300 ${form.works_on_holidays ? 'bg-brand-500' : 'bg-surface-700'
-                                            }`}
-                                    >
-                                        <motion.div
-                                            layout
-                                            className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-md"
-                                            style={{ left: form.works_on_holidays ? 'calc(100% - 1.625rem)' : '0.125rem' }}
-                                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                        />
-                                    </button>
+                                    <div className="relative">
+                                        <select
+                                            value={form.buffer_time}
+                                            onChange={(e) => update('buffer_time', e.target.value)}
+                                            className="appearance-none rounded-xl border border-white/10 bg-white/5 py-2 pl-4 pr-10 text-sm font-medium text-surface-50 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 hover:bg-white/10 transition-colors"
+                                        >
+                                            <option value={0} className="bg-surface-900 text-surface-50">Nenhum</option>
+                                            <option value={5} className="bg-surface-900 text-surface-50">5 min</option>
+                                            <option value={10} className="bg-surface-900 text-surface-50">10 min</option>
+                                            <option value={15} className="bg-surface-900 text-surface-50">15 min</option>
+                                            <option value={20} className="bg-surface-900 text-surface-50">20 min</option>
+                                            <option value={30} className="bg-surface-900 text-surface-50">30 min</option>
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-surface-200/50">
+                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

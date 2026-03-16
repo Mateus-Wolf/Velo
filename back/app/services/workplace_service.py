@@ -32,7 +32,23 @@ def get_workplace(db: Session, workplace_id: int, user_id: int) -> Workplace:
 
 
 def create_workplace(db: Session, user_id: int, data: WorkplaceCreate) -> Workplace:
-    """Cria um novo local de trabalho."""
+    """Cria um novo local de trabalho. Se multiple_workplaces=False, restringe a 1 ativo."""
+    
+    # Check if user multiple_workplaces flag is set to False
+    from app.models.user import User
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if user and not user.multiple_workplaces:
+        active_count = db.query(Workplace).filter(
+            Workplace.user_id == user_id, 
+            Workplace.is_active == True
+        ).count()
+        if active_count >= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sua conta está configurada para gerenciar apenas 1 local. Ative 'Trabalho em múltiplos locais' nas configurações para poder criar mais."
+            )
+            
     workplace = Workplace(user_id=user_id, **data.model_dump())
     db.add(workplace)
     db.commit()

@@ -297,6 +297,7 @@ function NotificationsModal({ isOpen, onClose, onSaved }) {
 /* ------------------------------------------------------------------ */
 function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workplaces, setToast }) {
     const { t } = useTranslation();
+    const { user } = useAuthStore();
     const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '', end_time: '', price: '' });
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -426,7 +427,8 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                                 </label>
                                 <select value={form.workplace_id}
                                     onChange={(e) => { update('workplace_id', e.target.value); update('client_id', ''); }}
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                                    disabled={user && !user.multiple_workplaces}
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option value="" className="bg-surface-900">{t('calendar.modals.edit.select', 'Selecione')}</option>
                                     {workplaces.map((wp) => (
                                         <option key={wp.id} value={wp.id} className="bg-surface-900">{wp.name}</option>
@@ -564,6 +566,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
 /* ------------------------------------------------------------------ */
 function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, selectedDate, setToast }) {
     const { t } = useTranslation();
+    const { user } = useAuthStore();
     const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '09:00', end_time: '10:00', price: '' });
     const [isRecurring, setIsRecurring] = useState(false);
     const [recurrenceType, setRecurrenceType] = useState('weekly');
@@ -601,8 +604,17 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
         if (isOpen && selectedDate) {
             setForm((f) => ({ ...f, date: dKey(selectedDate) }));
         }
+        
+        // Auto-select workplace logic
+        if (isOpen && workplaces.length > 0) {
+            const shouldAutoSelect = user && !user.multiple_workplaces;
+            if (shouldAutoSelect || workplaces.length === 1) {
+                setForm((f) => ({ ...f, workplace_id: String(workplaces[0].id) }));
+            }
+        }
+        
         setError('');
-    }, [isOpen, selectedDate]);
+    }, [isOpen, selectedDate, workplaces, user]);
 
     useEffect(() => {
         if (!form.workplace_id) { setClients([]); return; }
@@ -682,7 +694,8 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                                 </label>
                                 <select value={form.workplace_id}
                                     onChange={(e) => { update('workplace_id', e.target.value); update('client_id', ''); }}
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                                    disabled={user && !user.multiple_workplaces && form.workplace_id}
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option value="" className="bg-surface-900">{t('calendar.modals.create.selectWorkplace', 'Selecione o local')}</option>
                                     {workplaces.map((wp) => (
                                         <option key={wp.id} value={wp.id} className="bg-surface-900">{wp.name}</option>

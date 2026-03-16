@@ -11,7 +11,7 @@ from app.config import settings
 from app.database import engine, Base
 from app.models import *  # noqa: F401,F403 — registra todos os models na Base
 
-from app.routers import auth, workplaces, clients, appointments, alerts, notifications, profile, public_appointments, dashboard, gemini, financial, push, reviews
+from app.routers import auth, workplaces, clients, appointments, alerts, notifications, profile, public_appointments, dashboard, gemini, financial, push, reviews, staff
 from app.services.notification_scheduler import check_and_send_notifications
 
 # Configurar logging
@@ -91,6 +91,7 @@ app.include_router(gemini.router, prefix=API_V1)
 app.include_router(financial.router, prefix=API_V1)
 app.include_router(push.router, prefix=API_V1)
 app.include_router(reviews.router, prefix=API_V1)
+app.include_router(staff.router, prefix=API_V1)
 
 # Servir arquivos estáticos (avatares)
 import os

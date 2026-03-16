@@ -634,3 +634,57 @@ def appointment_completed_html(
     </body>
     </html>
     """
+
+
+def staff_action_notification_html(
+    admin_name: str,
+    staff_name: str,
+    action: str,
+) -> str:
+    """Gera HTML para notificar o admin sobre ações realizadas por staff."""
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <div style="max-width: 640px; margin: 0 auto; padding: 24px 16px;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); border-radius: 16px 16px 0 0; padding: 32px 24px; text-align: center;">
+                <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                    📋 Atividade da Equipe
+                </h1>
+            </div>
+
+            <!-- Body -->
+            <div style="background-color: white; padding: 32px 24px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 24px; font-size: 16px; color: #111827; line-height: 1.7;">
+                    Olá, <strong>{admin_name}</strong>!
+                </p>
+
+                <div style="background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%); border-radius: 12px; padding: 20px; border: 1px solid #c7d2fe; margin-bottom: 24px;">
+                    <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                        Seu(a) funcionário(a) <strong style="color: #6366f1;">{staff_name}</strong> {action}.
+                    </p>
+                </div>
+
+                <p style="margin: 0; font-size: 13px; color: #9ca3af; line-height: 1.5;">
+                    Esta é uma notificação automática sobre atividades da sua equipe.
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f9fafb; border-radius: 0 0 16px 16px; padding: 20px 24px; text-align: center; border: 1px solid #e5e7eb; border-top: none;">
+                <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                    Este email foi enviado automaticamente pelo Velo.<br>
+                    Por favor, não responda a este email.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+

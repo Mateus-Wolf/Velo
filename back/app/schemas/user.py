@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
+    multiple_workplaces: Optional[bool] = False
 
 
 class UserLogin(BaseModel):
@@ -23,6 +24,7 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     monthly_goal: Optional[float] = None
+    multiple_workplaces: Optional[bool] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -39,6 +41,8 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     two_factor_enabled: bool = False
     monthly_goal: float = 0.0
+    multiple_workplaces: bool = False
+    role: str = "admin"
     created_at: datetime
     updated_at: Optional[datetime] = None
 

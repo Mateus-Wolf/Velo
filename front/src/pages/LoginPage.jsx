@@ -97,6 +97,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [multipleWorkplaces, setMultipleWorkplaces] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
     const [localError, setLocalError] = useState('');
 
@@ -113,6 +114,7 @@ export default function LoginPage() {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
+        setMultipleWorkplaces(false);
         setShow2FA(false);
         setTempToken('');
         setCode2fa('');
@@ -132,7 +134,7 @@ export default function LoginPage() {
                 setLocalError(t('login.err_pass_length'));
                 return;
             }
-            const res = await register(name, email, password);
+            const res = await register(name, email, password, multipleWorkplaces);
             if (res?.success) navigate('/', { replace: true });
         } else {
             const res = await login(email, password, rememberMe);
@@ -292,6 +294,31 @@ export default function LoginPage() {
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                     />
+                                )}
+                                
+                                {mode === 'register' && (
+                                    <div className="mt-4 flex flex-col gap-1 rounded-xl border border-white/10 bg-white/5 p-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-surface-50">
+                                                Trabalho em múltiplos locais
+                                            </span>
+                                            <button
+                                                type="button"
+                                                role="switch"
+                                                aria-checked={multipleWorkplaces}
+                                                onClick={() => setMultipleWorkplaces(!multipleWorkplaces)}
+                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500/50 ${multipleWorkplaces ? 'bg-brand-500' : 'bg-surface-200/20'}`}
+                                            >
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${multipleWorkplaces ? 'translate-x-5' : 'translate-x-0'}`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-surface-200/50 mt-1">
+                                            Se ativado, você poderá cadastrar e gerenciar mais de um local de trabalho (como múltiplas clínicas ou consultórios).
+                                        </p>
+                                    </div>
                                 )}
                             </motion.div>
                         </AnimatePresence>
