@@ -26,6 +26,9 @@ def create_user(db: Session, user_data: UserCreate) -> User:
         name=user_data.name,
         email=user_data.email,
         password_hash=hash_password(user_data.password),
+        multiple_workplaces=user_data.multiple_workplaces or False,
+        niche=user_data.niche or "general",
+        crm=user_data.crm,
     )
     db.add(user)
     db.commit()

@@ -13,6 +13,7 @@ class Client(Base):
     email = sa.Column(sa.String(255), nullable=True)
     contact = sa.Column(sa.String(255), nullable=True)
     notes = sa.Column(sa.Text, nullable=True)
+    category = sa.Column(sa.String(50), default="client", nullable=False, doc="client ou patient")
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=sa.func.now())
 

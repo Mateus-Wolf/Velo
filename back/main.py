@@ -11,7 +11,7 @@ from app.config import settings
 from app.database import engine, Base
 from app.models import *  # noqa: F401,F403 — registra todos os models na Base
 
-from app.routers import auth, workplaces, clients, appointments, alerts, notifications, profile, public_appointments, dashboard, gemini, financial, push, reviews, staff
+from app.routers import auth, workplaces, clients, appointments, alerts, notifications, profile, public_appointments, dashboard, gemini, financial, push, reviews, staff, medical_records
 from app.services.notification_scheduler import check_and_send_notifications
 
 # Configurar logging
@@ -92,11 +92,13 @@ app.include_router(financial.router, prefix=API_V1)
 app.include_router(push.router, prefix=API_V1)
 app.include_router(reviews.router, prefix=API_V1)
 app.include_router(staff.router, prefix=API_V1)
+app.include_router(medical_records.router, prefix=API_V1)
 
 # Servir arquivos estáticos (avatares)
 import os
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(os.path.join(static_dir, "avatars"), exist_ok=True)
+os.makedirs(os.path.join(static_dir, "medical_records"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 

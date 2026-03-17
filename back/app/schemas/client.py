@@ -13,6 +13,7 @@ class ClientCreate(BaseModel):
     email: Optional[EmailStr] = None
     contact: Optional[str] = None
     notes: Optional[str] = None
+    category: Optional[str] = "client"
 
 
 class ClientUpdate(BaseModel):
@@ -20,6 +21,7 @@ class ClientUpdate(BaseModel):
     email: Optional[EmailStr] = None
     contact: Optional[str] = None
     notes: Optional[str] = None
+    category: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -32,6 +34,7 @@ class ClientResponse(BaseModel):
     email: Optional[EmailStr] = None
     contact: Optional[str] = None
     notes: Optional[str] = None
+    category: str
     is_active: bool
     created_at: datetime
 

@@ -13,6 +13,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     multiple_workplaces: Optional[bool] = False
+    niche: Optional[str] = "general"
+    crm: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -25,6 +27,8 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     monthly_goal: Optional[float] = None
     multiple_workplaces: Optional[bool] = None
+    niche: Optional[str] = None
+    crm: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -42,7 +46,10 @@ class UserResponse(BaseModel):
     two_factor_enabled: bool = False
     monthly_goal: float = 0.0
     multiple_workplaces: bool = False
+    niche: str = "general"
+    crm: Optional[str] = None
     role: str = "admin"
+    workplace_count: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
 

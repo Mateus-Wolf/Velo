@@ -24,6 +24,8 @@ class User(Base):
     two_factor_expires_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
     monthly_goal = sa.Column(sa.Float, default=0.0, nullable=False)
     multiple_workplaces = sa.Column(sa.Boolean, default=False, nullable=False)
+    niche = sa.Column(sa.String(50), default="general", nullable=False, doc="general ou clinical")
+    crm = sa.Column(sa.String(50), nullable=True)
 
     # Relacionamentos
     workplaces = relationship("Workplace", back_populates="user", lazy="selectin")

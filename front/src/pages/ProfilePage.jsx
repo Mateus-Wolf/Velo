@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 import UserDropdown from '../components/UserDropdown';
+import ConfirmModal from '../components/ConfirmModal';
 
 /* ------------------------------------------------------------------ */
 /*  Floating Orbs                                                      */
@@ -91,28 +92,54 @@ export default function ProfilePage() {
     // --- Profile info ---
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
+    const [crmNumber, setCrmNumber] = useState(user?.crm?.split('/')[0] || '');
+    const [crmUF, setCrmUF] = useState(user?.crm?.split('/')[1] || 'SP');
     const [infoLoading, setInfoLoading] = useState(false);
 
     // Fetch fresh profile data on mount
     useEffect(() => {
         api.get('/profile/').then(({ data }) => {
             setUser(data);
-            setName(data.name);
-            setEmail(data.email);
+            setName(data.name || '');
+            setEmail(data.email || '');
+            const [num, uf] = (data.crm || '').split('/');
+            setCrmNumber(num || '');
+            setCrmUF(uf || 'SP');
         }).catch(() => { });
     }, []);
 
-    const handleUpdateInfo = async (e) => {
-        e.preventDefault();
-        setInfoLoading(true);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: () => {}, title: '', message: '', variant: 'danger' });
+
+    const handleUpdateProfile = async (updates) => {
+        // Se estiver tentando mudar de clínico para geral, faz a verificação de segurança
+        if (updates.niche === 'general' && user?.niche === 'clinical') {
+            try {
+                const { data } = await api.get('/medical-records/check-clinical-data');
+                if (data.has_clinical_data) {
+                    setConfirmModal({
+                        isOpen: true,
+                        title: 'Aviso de Privacidade (LGPD)',
+                        message: 'Você possui pacientes com prontuários ou documentos anexados. Ao mudar para o nicho "Geral", esses dados clínicos ficarão ocultos e inacessíveis para visualização. Deseja continuar com a alteração?',
+                        variant: 'warning',
+                        onConfirm: () => executeUpdate(updates)
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.error("Erro ao verificar dados clínicos", err);
+            }
+        }
+        
+        executeUpdate(updates);
+    };
+
+    const executeUpdate = async (updates) => {
         try {
-            const { data } = await api.put('/profile/', { name, email });
+            const { data } = await api.put('/profile/', updates);
             setUser(data);
-            showToast('success', 'Perfil atualizado!');
+            showToast('success', t('profile.updated', 'Perfil atualizado!'));
         } catch (err) {
-            showToast('error', err.response?.data?.detail || 'Erro ao atualizar perfil');
-        } finally {
-            setInfoLoading(false);
+            showToast('error', err.response?.data?.detail || t('profile.updateError', 'Erro ao atualizar'));
         }
     };
 
@@ -288,9 +315,13 @@ export default function ProfilePage() {
 
                 {/* ---- Info Section ---- */}
                 <Section title="Informações Pessoais" icon={HiOutlineUser}>
-                    <form onSubmit={handleUpdateInfo} className="space-y-4">
+                    <form onSubmit={(e) => { 
+                        e.preventDefault(); 
+                        const fullCrm = crmNumber ? `${crmNumber}/${crmUF}` : '';
+                        handleUpdateProfile({ name, email, crm: fullCrm }); 
+                    }} className="space-y-4">
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-surface-200/70">{t('profile.name')}</label>
+                            <label className="mb-2 block text-sm font-medium text-surface-200/70">{t('profile.name', 'Nome')}</label>
                             <div className="relative">
                                 <HiOutlineUser size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-200/30" />
                                 <input value={name} onChange={(e) => setName(e.target.value)}
@@ -298,8 +329,40 @@ export default function ProfilePage() {
                                     className={`${inputClass} pl-10 ${isStaff ? 'opacity-60 cursor-not-allowed' : ''}`} placeholder="Seu nome" />
                             </div>
                         </div>
+                        {user?.niche === 'clinical' && !isStaff && (
+                            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                <label className="mb-2 block text-sm font-medium text-surface-200/70">CRM / Registro Profissional</label>
+                                <div className="flex gap-2">
+                                    <div className="flex-[2] relative group">
+                                        <HiSparkles size={16} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isStaff ? 'text-surface-200/20' : 'text-surface-200/30 group-focus-within:text-brand-400'}`} />
+                                        <input 
+                                            value={crmNumber} 
+                                            onChange={(e) => setCrmNumber(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                           disabled={isStaff}
+                                            className={`${inputClass} pl-10 ${isStaff ? 'opacity-60 cursor-not-allowed' : ''}`} 
+                                            placeholder="Número" 
+                                        />
+                                    </div>
+                                    <div className="flex-1 relative group">
+                                        <select
+                                            value={crmUF}
+                                            onChange={(e) => setCrmUF(e.target.value)}
+                                            disabled={isStaff}
+                                            className={`${inputClass} pr-8 appearance-none ${isStaff ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                        >
+                                            {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                                                <option key={uf} value={uf} className="bg-surface-900 text-surface-50">{uf}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-200/30 group-focus-within:text-brand-400 transition-colors">
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div>
-                            <label className="mb-2 block text-sm font-medium text-surface-200/70">{t('profile.email')}</label>
+                            <label className="mb-2 block text-sm font-medium text-surface-200/70">{t('profile.email', 'E-mail')}</label>
                             <div className="relative">
                                 <HiOutlineMail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-200/30" />
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -308,15 +371,60 @@ export default function ProfilePage() {
                             </div>
                         </div>
                         {!isStaff && (
-                        <motion.button type="submit" disabled={infoLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            className="rounded-xl gradient-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 disabled:opacity-60 flex items-center gap-2">
-                            {infoLoading ? (
-                                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                            ) : <><HiOutlineCheck size={16} /> {t('profile.save')}</>}
-                        </motion.button>
+                            <motion.button type="submit" disabled={infoLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                className="rounded-xl gradient-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 disabled:opacity-60 flex items-center gap-2">
+                                {infoLoading ? (
+                                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                                ) : <><HiOutlineCheck size={16} /> {t('profile.save', 'Salvar Alterações')}</>}
+                            </motion.button>
                         )}
                     </form>
                 </Section>
+
+                {/* ---- Niche & Workplaces ---- */}
+                {!isStaff && (
+                    <Section title={t('profile.preferences', 'Preferências do Sistema')} icon={HiSparkles}>
+                        <div className="space-y-6">
+                            {/* Niche Selection */}
+                            <div>
+                                <label className="mb-3 block text-sm font-medium text-surface-200/70">{t('profile.niche', 'Nicho de Atuação')}</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { value: 'general', label: 'Geral (Barbearia, Estética Simples)', desc: 'Ideal para serviços de agenda comum.' },
+                                        { value: 'clinical', label: 'Clínico (Saúde, Fisioterapia)', desc: 'Habilita prontuários e anamnese avançada.' }
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => handleUpdateProfile({ niche: opt.value })}
+                                            className={`flex flex-col items-start rounded-xl p-4 border transition-all text-left ${
+                                                user?.niche === opt.value 
+                                                ? 'border-brand-500/50 bg-brand-600/10' 
+                                                : 'border-white/5 bg-white/5 hover:bg-white/10'
+                                            }`}
+                                        >
+                                            <span className={`text-sm font-semibold ${user?.niche === opt.value ? 'text-brand-400' : 'text-surface-100'}`}>{opt.label}</span>
+                                            <span className="text-[10px] text-surface-200/40 mt-1 uppercase tracking-wider">{opt.desc}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Multiple Workplaces Toggle */}
+                            <div className="flex items-center justify-between py-4 border-t border-white/5">
+                                <div>
+                                    <h4 className="text-sm font-medium text-surface-50">Múltiplos Locais de Atendimento</h4>
+                                    <p className="text-xs text-surface-200/40 mt-1">Habilite se você trabalha em mais de uma clínica ou salão.</p>
+                                </div>
+                                <button
+                                    onClick={() => handleUpdateProfile({ multiple_workplaces: !user?.multiple_workplaces })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${user?.multiple_workplaces ? 'bg-brand-600' : 'bg-surface-700'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${user?.multiple_workplaces ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+                    </Section>
+                )}
 
                 {/* ---- Password Section (admin only) ---- */}
                 {!isStaff && (
@@ -406,6 +514,17 @@ export default function ProfilePage() {
 
             <AnimatePresence>
                 <Toast toast={toast} onClose={() => setToast(null)} />
+
+                <ConfirmModal 
+                    isOpen={confirmModal.isOpen}
+                    onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                    onConfirm={confirmModal.onConfirm}
+                    title={confirmModal.title}
+                    message={confirmModal.message}
+                    variant={confirmModal.variant}
+                    confirmText="Alterar Nicho"
+                    cancelText="Manter Clínico"
+                />
 
                 {show2FA && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-surface-950/80 backdrop-blur-sm">

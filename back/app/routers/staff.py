@@ -30,6 +30,7 @@ def _staff_to_response(staff: StaffMember) -> dict:
         "name": staff.name,
         "email": staff.email,
         "can_change_status": staff.can_change_status,
+        "can_access_documents": getattr(staff, 'can_access_documents', False),
         "is_active": staff.is_active,
         "avatar_url": staff.avatar_url,
         "workplace_ids": [wa.workplace_id for wa in staff.workplace_access],
@@ -40,13 +41,23 @@ def _staff_to_response(staff: StaffMember) -> dict:
 
 @router.get("/", response_model=List[StaffResponse])
 def list_staff(
+    name: str = None,
+    is_active: bool = None,
     db: Session = Depends(get_db),
     account: CurrentAccount = Depends(require_admin),
 ):
-    """Lista todos os funcionários do admin."""
-    staff_list = db.query(StaffMember).filter(
+    """Lista todos os funcionários do admin com filtros opcionais."""
+    query = db.query(StaffMember).filter(
         StaffMember.admin_user_id == account.user.id,
-    ).order_by(StaffMember.name).all()
+    )
+    
+    if name:
+        query = query.filter(StaffMember.name.ilike(f"%{name}%"))
+    
+    if is_active is not None:
+        query = query.filter(StaffMember.is_active == is_active)
+        
+    staff_list = query.order_by(StaffMember.name).all()
     return [_staff_to_response(s) for s in staff_list]
 
 
@@ -109,6 +120,7 @@ def create_staff(
         email=data.email,
         password_hash=hash_password(data.password),
         can_change_status=data.can_change_status,
+        can_access_documents=data.can_access_documents,
     )
     db.add(staff)
     db.flush()  # para obter o id

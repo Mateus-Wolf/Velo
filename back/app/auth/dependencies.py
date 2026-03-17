@@ -114,6 +114,7 @@ def get_current_account(
             staff=staff,
             permissions={
                 "can_change_status": staff.can_change_status,
+                "can_access_documents": staff.can_access_documents,
                 "allowed_workplace_ids": allowed_wp_ids,
             },
         )

@@ -12,6 +12,7 @@ import WorkplacePage from './pages/WorkplacePage';
 import ClientHistoryPage from './pages/ClientHistoryPage';
 import WorkplaceHistoryPage from './pages/WorkplaceHistoryPage';
 import UserHistoryPage from './pages/UserHistoryPage';
+import MedicalRecordPage from './pages/MedicalRecordPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AdminRoute } from './components/ProtectedRoute';
 import NotificationToast from './components/NotificationToast';
@@ -161,12 +162,22 @@ export default function App() {
             }
           />
           {/* History — by client */}
-          <Route
+            <Route
             path="/client/:clientId/history"
             element={
               <ProtectedRoute>
                 <AnimatedPage>
                   <ClientHistoryPage />
+                </AnimatedPage>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients/:clientId/medical-record"
+            element={
+              <ProtectedRoute>
+                <AnimatedPage>
+                  <MedicalRecordPage />
                 </AnimatedPage>
               </ProtectedRoute>
             }
