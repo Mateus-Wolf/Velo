@@ -189,7 +189,10 @@ def me(account: CurrentAccount = Depends(get_current_account)):
         "two_factor_enabled": user.two_factor_enabled,
         "monthly_goal": user.monthly_goal,
         "multiple_workplaces": user.multiple_workplaces,
+        "niche": user.niche,
+        "crm": user.crm,
         "role": account.role,
+        "workplace_count": len(user.workplaces) if account.role == "admin" else len(account.permissions.get("allowed_workplace_ids", [])),
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "updated_at": user.updated_at.isoformat() if user.updated_at else None,
     }

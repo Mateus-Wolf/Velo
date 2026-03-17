@@ -18,6 +18,7 @@ import {
     HiOutlineClipboardCopy,
     HiOutlineSwitchHorizontal,
     HiOutlineClipboardList,
+    HiOutlineDocumentText,
 } from 'react-icons/hi';
 import { HiSparkles } from 'react-icons/hi2';
 import useAuthStore from '../store/useAuthStore';
@@ -82,7 +83,7 @@ function ConfirmDeleteDialog({ isOpen, onClose, onConfirm, title, description, l
 /* ------------------------------------------------------------------ */
 /*  Client Card                                                        */
 /* ------------------------------------------------------------------ */
-function ClientCard({ client, index, onEdit, onDelete, onCopyMove, onHistory }) {
+function ClientCard({ client, index, onEdit, onDelete, onCopyMove, onHistory, onMedicalRecord, user }) {
     const { t } = useTranslation();
     return (
         <motion.div
@@ -139,6 +140,19 @@ function ClientCard({ client, index, onEdit, onDelete, onCopyMove, onHistory }) 
                             >
                                 <HiOutlinePencil size={12} />
                             </motion.button>
+
+                            {/* Medical Record (Prontuário) - only for patients in clinical niche and authorized staff/admin */}
+                            {client.category === 'patient' && user?.niche === 'clinical' && (user?.role === 'admin' || user?.permissions?.can_access_documents) && (
+                                <motion.button
+                                    whileHover={{ scale: 1.15 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={(e) => { e.stopPropagation(); onMedicalRecord(client); }}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-brand-400 hover:bg-brand-600/20 hover:border-brand-500/30 transition-all opacity-0 group-hover:opacity-100"
+                                    title={t('workplace.card.medicalRecord', 'Ver prontuário do paciente')}
+                                >
+                                    <HiOutlineDocumentText size={12} />
+                                </motion.button>
+                            )}
 
                             {/* Delete */}
                             <motion.button
@@ -276,10 +290,10 @@ function FilterPanel({ isOpen, onClose, filters, onApply }) {
 /* ------------------------------------------------------------------ */
 /*  Create / Edit Client Modal                                         */
 /* ------------------------------------------------------------------ */
-function ClientModal({ isOpen, onClose, onCreated, onUpdated, workplaceId, client }) {
+function ClientModal({ isOpen, onClose, onCreated, onUpdated, workplaceId, client, user }) {
     const { t } = useTranslation();
     const isEditing = !!client;
-    const [form, setForm] = useState({ name: '', email: '', contact: '', notes: '', is_active: true });
+    const [form, setForm] = useState({ name: '', email: '', contact: '', notes: '', is_active: true, category: 'client' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -291,12 +305,20 @@ function ClientModal({ isOpen, onClose, onCreated, onUpdated, workplaceId, clien
                 contact: client.contact || '',
                 notes: client.notes || '',
                 is_active: client.is_active !== false,
+                category: client.category || (user?.niche === 'clinical' ? 'patient' : 'client'),
             });
         } else {
-            setForm({ name: '', email: '', contact: '', notes: '', is_active: true });
+            setForm({ 
+                name: '', 
+                email: '', 
+                contact: '', 
+                notes: '', 
+                is_active: true, 
+                category: user?.niche === 'clinical' ? 'patient' : 'client' 
+            });
         }
         setError('');
-    }, [client, isOpen]);
+    }, [client, isOpen, user?.niche]);
 
     const update = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -315,6 +337,7 @@ function ClientModal({ isOpen, onClose, onCreated, onUpdated, workplaceId, clien
                 email: form.email.trim() || null,
                 contact: form.contact.trim() || null,
                 notes: form.notes.trim() || null,
+                category: form.category,
             };
 
             if (isEditing) {
@@ -358,7 +381,7 @@ function ClientModal({ isOpen, onClose, onCreated, onUpdated, workplaceId, clien
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                             <AnimatePresence>
                                 {error && (
                                     <motion.div
@@ -429,6 +452,7 @@ function ClientModal({ isOpen, onClose, onCreated, onUpdated, workplaceId, clien
                                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-surface-50 outline-none transition-all focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 placeholder:text-surface-200/30 resize-none"
                                 />
                             </div>
+
 
                             {/* Inactivate toggle — edit only */}
                             {isEditing && (
@@ -780,6 +804,9 @@ export default function WorkplacePage() {
 
     const activeFilterCount = filters.status !== 'all' ? 1 : 0;
 
+    const handleMedicalRecord = (client) => {
+        navigate(`/clients/${client.id}/medical-record`);
+    };
 
     return (
         <div className="min-h-screen gradient-bg">
@@ -959,10 +986,12 @@ export default function WorkplacePage() {
                                 key={client.id}
                                 client={client}
                                 index={i}
+                                user={user}
                                 onEdit={openEdit}
                                 onDelete={setDeleteTarget}
                                 onCopyMove={setCopyMoveTarget}
                                 onHistory={(c) => navigate(`/client/${c.id}/history`)}
+                                onMedicalRecord={handleMedicalRecord}
                             />
                         ))}
                     </div>
@@ -996,6 +1025,7 @@ export default function WorkplacePage() {
                 onUpdated={handleUpdated}
                 workplaceId={workplaceId}
                 client={editingClient}
+                user={user}
             />
             <ConfirmDeleteDialog
                 isOpen={!!deleteTarget}

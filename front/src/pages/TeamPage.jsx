@@ -19,6 +19,7 @@ import { useRef } from 'react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import HeaderNav from '../components/HeaderNav';
+import ConfirmModal from '../components/ConfirmModal';
 import { useTranslation } from 'react-i18next';
 
 export default function TeamPage() {
@@ -30,19 +31,25 @@ export default function TeamPage() {
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState({
         name: '', email: '', password: '',
-        can_change_status: false, workplace_ids: [], is_active: true,
+        can_change_status: false, can_access_documents: false, workplace_ids: [], is_active: true,
         avatar_url: null,
     });
+    const [showConfirmDocs, setShowConfirmDocs] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [avatarLoading, setAvatarLoading] = useState(false);
+    const [filters, setFilters] = useState({ name: '', is_active: 'all' });
     const fileInputRef = useRef(null);
     const BACKEND_URL = 'http://localhost:8000';
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
+            const params = {};
+            if (filters.name) params.name = filters.name;
+            if (filters.is_active !== 'all') params.is_active = filters.is_active === 'active';
+
             const [staffRes, wpRes] = await Promise.all([
-                api.get('/staff/'),
+                api.get('/staff/', { params }),
                 api.get('/workplaces/'),
             ]);
             setStaff(staffRes.data);
@@ -52,13 +59,13 @@ export default function TeamPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [filters]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const openCreate = () => {
         setEditing(null);
-        setForm({ name: '', email: '', password: '', can_change_status: false, workplace_ids: [], is_active: true });
+        setForm({ name: '', email: '', password: '', can_change_status: false, can_access_documents: false, workplace_ids: [], is_active: true });
         setShowPassword(false);
         setModalOpen(true);
     };
@@ -70,6 +77,7 @@ export default function TeamPage() {
             email: s.email,
             password: '',
             can_change_status: s.can_change_status,
+            can_access_documents: s.can_access_documents || false,
             workplace_ids: s.workplace_ids || [],
             is_active: s.is_active,
             avatar_url: s.avatar_url,
@@ -188,6 +196,38 @@ export default function TeamPage() {
                     </motion.button>
                 </div>
 
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                    <div className="flex-1 relative">
+                        <input
+                            type="text"
+                            placeholder="Buscar por nome..."
+                            value={filters.name}
+                            onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-surface-200/30 focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20 outline-none transition-all"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        {[
+                            { value: 'all', label: 'Todos' },
+                            { value: 'active', label: 'Ativos' },
+                            { value: 'inactive', label: 'Inativos' },
+                        ].map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setFilters(prev => ({ ...prev, is_active: opt.value }))}
+                                className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all ${
+                                    filters.is_active === opt.value
+                                        ? 'border-brand-500/40 bg-brand-500/10 text-white'
+                                        : 'border-white/10 bg-white/5 text-surface-200/60 hover:border-white/20'
+                                }`}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Loading */}
                 {loading && (
                     <div className="text-center py-16 text-surface-200/40">
@@ -262,6 +302,12 @@ export default function TeamPage() {
                                     <HiOutlineShieldCheck size={11} />
                                     {s.can_change_status ? 'Pode alterar status' : 'Sem alterar status'}
                                 </span>
+                                {s.can_access_documents && (
+                                    <span className="text-[10px] font-medium px-2 py-1 rounded-lg flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/20">
+                                        <HiOutlineShieldCheck size={11} />
+                                        Acesso a documentos
+                                    </span>
+                                )}
                             </div>
 
                             {/* Workplaces */}
@@ -451,6 +497,36 @@ export default function TeamPage() {
                                                 }`} />
                                             </button>
                                         </div>
+ 
+                                        {/* Can access documents */}
+                                        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                                            <div>
+                                                <p className="text-sm font-medium text-white flex items-center gap-2">
+                                                    <HiOutlineShieldCheck size={16} className="text-amber-400" />
+                                                    Acesso a documentos de pacientes
+                                                </p>
+                                                <p className="text-[11px] text-surface-200/40 mt-0.5">
+                                                    Permite visualizar documentos anexados aos pacientes
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (!form.can_access_documents) {
+                                                        setShowConfirmDocs(true);
+                                                    } else {
+                                                        setForm(prev => ({ ...prev, can_access_documents: false }));
+                                                    }
+                                                }}
+                                                className={`relative w-11 h-6 rounded-full transition-colors ${
+                                                    form.can_access_documents ? 'bg-amber-500' : 'bg-white/10'
+                                                }`}
+                                            >
+                                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                                                    form.can_access_documents ? 'translate-x-5' : ''
+                                                }`} />
+                                            </button>
+                                        </div>
 
                                         {/* Active toggle (edit only) */}
                                         {editing && (
@@ -533,6 +609,16 @@ export default function TeamPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+ 
+                <ConfirmModal
+                    isOpen={showConfirmDocs}
+                    onClose={() => setShowConfirmDocs(false)}
+                    onConfirm={() => setForm(prev => ({ ...prev, can_access_documents: true }))}
+                    title="Alerta de Privacidade"
+                    variant="warning"
+                    message="Quaisquer responsabilidades da privacidade do paciente são do médico e o Velo não se responsabiliza por vazamentos ocasionados por descuidos de funcionários."
+                    confirmText="Estou ciente e autorizo"
+                />
             </div>
         </div>
     );

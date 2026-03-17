@@ -15,6 +15,8 @@ class StaffMember(Base):
     can_change_status = sa.Column(sa.Boolean, default=False, nullable=False,
                                   doc="Se True, o staff pode alterar status de agendamentos")
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
+    can_access_documents = sa.Column(sa.Boolean, default=False, nullable=False,
+                                     doc="Se True, o staff pode acessar documentos de pacientes")
     avatar_url = sa.Column(sa.String(500), nullable=True)
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=sa.func.now())
     updated_at = sa.Column(

@@ -13,6 +13,9 @@ from app.models.push_subscription import PushSubscription
 from app.models.review import Review
 from app.models.staff_member import StaffMember
 from app.models.staff_workplace_access import StaffWorkplaceAccess
+from app.models.medical_record import MedicalRecord
+from app.models.attachment import Attachment
+from app.models.consent_form import ConsentForm
 
 __all__ = [
     "User",
@@ -30,5 +33,8 @@ __all__ = [
     "Review",
     "StaffMember",
     "StaffWorkplaceAccess",
+    "MedicalRecord",
+    "Attachment",
+    "ConsentForm",
 ]
 

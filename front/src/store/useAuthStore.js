@@ -106,10 +106,17 @@ const useAuthStore = create((set) => ({
         }
     },
 
-    register: async (name, email, password, multipleWorkplaces) => {
+    register: async (name, email, password, multipleWorkplaces, niche, crm) => {
         set({ isLoading: true, error: null });
         try {
-            await api.post('/auth/register', { name, email, password, multiple_workplaces: multipleWorkplaces });
+            await api.post('/auth/register', { 
+                name, 
+                email, 
+                password, 
+                multiple_workplaces: multipleWorkplaces,
+                niche,
+                crm
+            });
 
             // Auto-login after register
             const formData = new URLSearchParams();

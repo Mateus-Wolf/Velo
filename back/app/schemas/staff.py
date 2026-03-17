@@ -14,6 +14,7 @@ class StaffCreate(BaseModel):
     password: str
     workplace_ids: List[int] = []
     can_change_status: bool = False
+    can_access_documents: bool = False
     avatar_url: Optional[str] = None
 
 
@@ -22,6 +23,7 @@ class StaffUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     can_change_status: Optional[bool] = None
+    can_access_documents: Optional[bool] = None
     is_active: Optional[bool] = None
     workplace_ids: Optional[List[int]] = None
     avatar_url: Optional[str] = None
@@ -35,6 +37,7 @@ class StaffResponse(BaseModel):
     name: str
     email: str
     can_change_status: bool = False
+    can_access_documents: bool = False
     is_active: bool = True
     workplace_ids: List[int] = []
     avatar_url: Optional[str] = None

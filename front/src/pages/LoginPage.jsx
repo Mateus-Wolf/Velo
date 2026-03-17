@@ -98,16 +98,24 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [multipleWorkplaces, setMultipleWorkplaces] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false);
+    const [regStep, setRegStep] = useState(1); // 1 | 2
+    const [niche, setNiche] = useState('general'); // 'general' | 'clinical'
+    const [crmNumber, setCrmNumber] = useState('');
+    const [crmUF, setCrmUF] = useState('SP');
     const [localError, setLocalError] = useState('');
 
     // 2FA states
+    const [rememberMe, setRememberMe] = useState(false);
     const [show2FA, setShow2FA] = useState(false);
     const [tempToken, setTempToken] = useState('');
     const [code2fa, setCode2fa] = useState('');
 
     const toggleMode = () => {
         setMode((m) => (m === 'login' ? 'register' : 'login'));
+        setRegStep(1);
+        setNiche('general');
+        setCrmNumber('');
+        setCrmUF('SP');
         clearError();
         setLocalError('');
         setName('');
@@ -126,23 +134,39 @@ export default function LoginPage() {
         clearError();
 
         if (mode === 'register') {
-            if (password !== confirmPassword) {
-                setLocalError(t('login.err_pass_mismatch'));
+            if (regStep === 1) {
+                if (!name || !email || !password || !confirmPassword) {
+                    setLocalError('Preencha todos os campos.');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    setLocalError(t('login.err_pass_mismatch'));
+                    return;
+                }
+                if (password.length < 6) {
+                    setLocalError(t('login.err_pass_length'));
+                    return;
+                }
+                setRegStep(2);
                 return;
+            } else {
+                const fullCrm = crmNumber ? `${crmNumber}/${crmUF}` : '';
+                const res = await register(name, email, password, multipleWorkplaces, niche, fullCrm);
+                if (res?.success) {
+                    const currentUser = useAuthStore.getState().user;
+                    const path = currentUser?.workplace_count === 0 ? '/workplaces' : '/';
+                    navigate(path, { replace: true });
+                }
             }
-            if (password.length < 6) {
-                setLocalError(t('login.err_pass_length'));
-                return;
-            }
-            const res = await register(name, email, password, multipleWorkplaces);
-            if (res?.success) navigate('/', { replace: true });
         } else {
             const res = await login(email, password, rememberMe);
             if (res?.requires2fa) {
                 setTempToken(res.tempToken);
                 setShow2FA(true);
             } else if (res?.success) {
-                navigate('/', { replace: true });
+                const currentUser = useAuthStore.getState().user;
+                const path = currentUser?.workplace_count === 0 ? '/workplaces' : '/';
+                navigate(path, { replace: true });
             }
         }
     };
@@ -159,7 +183,9 @@ export default function LoginPage() {
 
         const res = await verify2fa(tempToken, code2fa, rememberMe);
         if (res?.success) {
-            navigate('/', { replace: true });
+            const currentUser = useAuthStore.getState().user;
+            const path = currentUser?.workplace_count === 0 ? '/workplaces' : '/';
+            navigate(path, { replace: true });
         }
     };
 
@@ -250,75 +276,171 @@ export default function LoginPage() {
                     <form onSubmit={handleSubmit}>
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={mode}
+                                key={`${mode}-${regStep}`}
                                 variants={formVariants}
                                 initial="enter"
                                 animate="center"
                                 exit="exit"
                                 className="space-y-4"
                             >
-                                {mode === 'register' && (
-                                    <FloatingInput
-                                        id="name"
-                                        icon={HiOutlineUser}
-                                        label={t('login.name_label')}
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                    />
-                                )}
-
-                                <FloatingInput
-                                    id="email"
-                                    icon={HiOutlineMail}
-                                    label={t('login.email_label')}
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                />
-
-                                <FloatingInput
-                                    id="password"
-                                    icon={HiOutlineLockClosed}
-                                    label={t('login.password_label')}
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-
-                                {mode === 'register' && (
-                                    <FloatingInput
-                                        id="confirmPassword"
-                                        icon={HiOutlineLockClosed}
-                                        label={t('login.confirm_password_label')}
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                    />
-                                )}
-                                
-                                {mode === 'register' && (
-                                    <div className="mt-4 flex flex-col gap-1 rounded-xl border border-white/10 bg-white/5 p-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium text-surface-50">
-                                                Trabalho em múltiplos locais
-                                            </span>
-                                            <button
-                                                type="button"
-                                                role="switch"
-                                                aria-checked={multipleWorkplaces}
-                                                onClick={() => setMultipleWorkplaces(!multipleWorkplaces)}
-                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500/50 ${multipleWorkplaces ? 'bg-brand-500' : 'bg-surface-200/20'}`}
-                                            >
-                                                <span
-                                                    aria-hidden="true"
-                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${multipleWorkplaces ? 'translate-x-5' : 'translate-x-0'}`}
-                                                />
-                                            </button>
+                                {mode === 'register' && regStep === 1 && (
+                                    <>
+                                        <FloatingInput
+                                            id="name"
+                                            icon={HiOutlineUser}
+                                            label={t('login.name_label')}
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                        />
+                                        <FloatingInput
+                                            id="email"
+                                            icon={HiOutlineMail}
+                                            label={t('login.email_label')}
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                        />
+                                        <FloatingInput
+                                            id="password"
+                                            icon={HiOutlineLockClosed}
+                                            label={t('login.password_label')}
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                        />
+                                        <FloatingInput
+                                            id="confirmPassword"
+                                            icon={HiOutlineLockClosed}
+                                            label={t('login.confirm_password_label')}
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                        />
+                                        
+                                        <div className="pt-2">
+                                            <label className="mb-2 block text-xs font-semibold text-surface-200/50 uppercase tracking-wider">
+                                                Nicho de Atuação
+                                            </label>
+                                            <div className="flex gap-2">
+                                                {[
+                                                    { id: 'general', label: 'Geral', desc: 'Serviços em geral' },
+                                                    { id: 'clinical', label: 'Clínico', desc: 'Saúde e estética' }
+                                                ].map((opt) => (
+                                                    <button
+                                                        key={opt.id}
+                                                        type="button"
+                                                        onClick={() => setNiche(opt.id)}
+                                                        className={`flex-1 rounded-xl border p-3 text-left transition-all ${
+                                                            niche === opt.id
+                                                                ? 'border-brand-500 bg-brand-500/10 ring-1 ring-brand-500'
+                                                                : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                                        }`}
+                                                    >
+                                                        <p className={`text-sm font-bold ${niche === opt.id ? 'text-brand-400' : 'text-surface-50'}`}>
+                                                            {opt.label}
+                                                        </p>
+                                                        <p className="text-[10px] text-surface-200/40">{opt.desc}</p>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <p className="text-xs text-surface-200/50 mt-1">
-                                            Se ativado, você poderá cadastrar e gerenciar mais de um local de trabalho (como múltiplas clínicas ou consultórios).
-                                        </p>
+                                    </>
+                                )}
+
+                                {mode === 'register' && regStep === 2 && (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-1 rounded-xl border border-white/10 bg-white/5 p-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium text-surface-50">
+                                                    Múltiplos locais de trabalho
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    role="switch"
+                                                    aria-checked={multipleWorkplaces}
+                                                    onClick={() => setMultipleWorkplaces(!multipleWorkplaces)}
+                                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500/50 ${multipleWorkplaces ? 'bg-brand-500' : 'bg-surface-200/20'}`}
+                                                >
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${multipleWorkplaces ? 'translate-x-5' : 'translate-x-0'}`}
+                                                    />
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-surface-200/50 mt-1">
+                                                Ative se você atende em mais de um consultório ou unidade.
+                                            </p>
+                                        </div>
+
+                                        {niche === 'clinical' && (
+                                            <div className="flex gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <div className="flex-[2] relative group">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-200/40 group-focus-within:text-brand-400 transition-colors">
+                                                        <HiSparkles size={18} />
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        value={crmNumber}
+                                                        onChange={(e) => setCrmNumber(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                        className="peer w-full rounded-xl border border-white/10 bg-white/5 py-3.5 pl-11 pr-4 text-sm text-surface-50 placeholder-transparent outline-none transition-all duration-300 focus:border-brand-500 focus:bg-white/[0.07] focus:ring-2 focus:ring-brand-500/20"
+                                                        placeholder="CRM"
+                                                    />
+                                                    <label className={`pointer-events-none absolute left-11 transition-all duration-300 ${crmNumber.length > 0 ? '-top-2.5 text-xs font-medium text-brand-400 bg-surface-950 px-1' : 'top-1/2 -translate-y-1/2 text-sm text-surface-200/50'}`}>
+                                                        Número do CRM
+                                                    </label>
+                                                </div>
+
+                                                <div className="flex-1 relative group">
+                                                    <select
+                                                        value={crmUF}
+                                                        onChange={(e) => setCrmUF(e.target.value)}
+                                                        className="peer w-full rounded-xl border border-white/10 bg-white/5 py-3.5 px-4 text-sm text-surface-50 outline-none transition-all duration-300 focus:border-brand-500 focus:bg-white/[0.07] focus:ring-2 focus:ring-brand-500/20 appearance-none"
+                                                    >
+                                                        {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                                                            <option key={uf} value={uf} className="bg-surface-900 text-surface-50">{uf}</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-surface-200/40 group-focus-within:text-brand-400 transition-colors">
+                                                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                    </div>
+                                                    <label className="pointer-events-none absolute left-4 -top-2.5 text-xs font-medium text-brand-400 bg-surface-950 px-1">
+                                                        UF
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setRegStep(1)}
+                                            className="text-sm text-surface-200/50 hover:text-brand-300 transition-colors underline decoration-brand-500/30 underline-offset-4"
+                                        >
+                                            ← Voltar para dados básicos
+                                        </button>
                                     </div>
+                                )}
+
+                                {mode === 'login' && (
+                                    <>
+                                        <FloatingInput
+                                            id="email"
+                                            icon={HiOutlineMail}
+                                            label={t('login.email_label')}
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                        />
+                                        <FloatingInput
+                                            id="password"
+                                            icon={HiOutlineLockClosed}
+                                            label={t('login.password_label')}
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                        />
+                                    </>
                                 )}
                             </motion.div>
                         </AnimatePresence>
@@ -375,6 +497,8 @@ export default function LoginPage() {
                                 </svg>
                             ) : mode === 'login' ? (
                                 t('login.btn_login')
+                            ) : regStep === 1 ? (
+                                'Próximo passo'
                             ) : (
                                 t('login.btn_register')
                             )}
