@@ -1,4 +1,4 @@
-# 📅 Schedly — Sistema Web de Agenda Profissional
+# 📅 Velo — Sistema Web de Agenda Profissional
 
 > Sistema web responsivo de agendamento para profissionais autônomos que atuam em múltiplos locais de trabalho.
 
@@ -6,7 +6,7 @@
 
 ## ✨ Visão Geral
 
-O **Schedly** é uma plataforma full-stack de gestão de agenda profissional, construída para profissionais autônomos e liberais (psicólogos, médicos, fisioterapeutas, personal trainers, etc.) que precisam organizar clientes, horários e históricos de atendimento de forma centralizada e segura.
+O **Velo** é uma plataforma full-stack de gestão de agenda profissional, construída para profissionais autônomos e liberais (psicólogos, médicos, fisioterapeutas, personal trainers, etc.) que precisam organizar clientes, horários e históricos de atendimento de forma centralizada e segura.
 
 **Principais diferenciais:**
 
@@ -112,8 +112,8 @@ PROJET-WEB-SITE-VELO/
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/Mateus-Wolf/Schedly.git
-cd Schedly
+git clone https://github.com/Mateus-Wolf/Velo.git
+cd Velo
 ```
 
 ---
