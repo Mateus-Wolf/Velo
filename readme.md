@@ -1,319 +1,341 @@
-# 📅 Sistema Web de Agenda Profissional
+# 📅 Schedly — Sistema Web de Agenda Profissional
 
-## 1. Visão Geral do Projeto
-
-Este projeto consiste em um **sistema web responsivo de agenda profissional**, voltado para profissionais autônomos ou liberais que atuam em **um ou mais locais de trabalho** e precisam organizar clientes, horários e históricos de atendimento de forma centralizada.
-
-O sistema será acessível via navegador em **desktop e dispositivos móveis**, sem necessidade de instalação.
-
-O foco do projeto é:
-
-* Organização
-* Confiabilidade de horários
-* Regras de negócio bem definidas
-* Escalabilidade futura (SaaS-ready)
+> Sistema web responsivo de agendamento para profissionais autônomos que atuam em múltiplos locais de trabalho.
 
 ---
 
-## 2. Objetivos
+## ✨ Visão Geral
 
-* Permitir que profissionais gerenciem seus compromissos com segurança
-* Evitar conflitos de agenda
-* Facilitar o gerenciamento de múltiplos locais de trabalho
-* Centralizar histórico de atendimentos
-* Oferecer boa experiência mobile
-* Servir como base sólida para futuras integrações (IA, notificações, planos)
+O **Schedly** é uma plataforma full-stack de gestão de agenda profissional, construída para profissionais autônomos e liberais (psicólogos, médicos, fisioterapeutas, personal trainers, etc.) que precisam organizar clientes, horários e históricos de atendimento de forma centralizada e segura.
 
----
+**Principais diferenciais:**
 
-## 3. Público-Alvo
-
-* Profissionais autônomos
-* Prestadores de serviço
-* Profissionais que atuam em múltiplos locais (clínicas, estúdios, consultórios, etc)
+- 📍 Suporte a **múltiplos locais de trabalho** com horários independentes
+- 🧠 Assistente de IA integrado via **Gemini** para agendamento em linguagem natural
+- 🔔 **Notificações push** via Firebase Cloud Messaging
+- 🌍 **Internacionalização** completa (PT-BR, EN, ES)
+- 📊 **Dashboard financeiro e de métricas** com exportação em Excel e PDF
+- 📁 **Prontuários clínicos** com upload criptografado
+- 👥 **Gestão de equipe** com controle de permissões por local
+- 📱 Interface **100% responsiva**, otimizada para desktop e mobile
 
 ---
 
-## 4. Stack Tecnológica
+## 🛠️ Stack Tecnológica
 
 ### Backend
 
-* **Linguagem:** Python
-* **Framework:** FastAPI
-* **ORM:** SQLAlchemy
-* **Validação:** Pydantic
-* **Autenticação:** JWT
-* **Jobs agendados:** Background Tasks / Celery (futuro)
-
-### Banco de Dados
-
-* **PostgreSQL**
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| Python | 3.11+ | Linguagem principal |
+| FastAPI | 0.115 | Framework REST |
+| SQLAlchemy | 2.0 | ORM |
+| Pydantic v2 | 2.9 | Validação e settings |
+| PostgreSQL | 14+ | Banco de dados |
+| Alembic | 1.13 | Migrações |
+| python-jose | 3.3 | JWT (access + refresh token) |
+| passlib + bcrypt | — | Hash de senhas |
+| APScheduler | 3.10 | Jobs agendados (alertas, notificações) |
+| google-generativeai | latest | Integração Gemini AI |
+| Uvicorn | 0.30 | Servidor ASGI |
 
 ### Frontend
 
-* **React**
-* **Vite**
-* **TailwindCSS**
-* **Gerenciamento de estado:** Context API ou Zustand
-
-### Integrações
-
-* **IA:** Gemini Flash (fase avançada)
-
-### Infraestrutura
-
-* Deploy backend: Render / Railway
-* Deploy frontend: Vercel / Netlify
-
----
-
-## 5. Arquitetura Geral
-
-* Frontend SPA consumindo API REST
-* Backend desacoplado
-* API versionada
-* Separação clara entre domínio, regras e infraestrutura
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| React | 19 | UI Framework |
+| Vite | 7 | Build tool |
+| TailwindCSS | 4 | Estilização |
+| Zustand | 5 | Gerenciamento de estado |
+| React Router | 7 | Roteamento SPA |
+| Axios | 1.13 | Cliente HTTP |
+| Firebase JS SDK | 12 | Push Notifications |
+| Framer Motion | 12 | Animações |
+| i18next | 25 | Internacionalização |
+| jsPDF + xlsx | — | Exportação de relatórios |
+| react-hot-toast | 2.6 | Notificações toast |
 
 ---
 
-## 6. Modelagem do Banco de Dados
+## 🏗️ Arquitetura
 
-### 6.1 users
-
-Representa o profissional.
-
-Campos:
-
-* id (PK)
-* name
-* email (unique)
-* password_hash
-* created_at
-* updated_at
-
----
-
-### 6.2 workplaces
-
-Locais onde o profissional trabalha.
-
-Campos:
-
-* id (PK)
-* user_id (FK → users.id)
-* name
-* description
-* photo_url (nullable)
-* address (nullable)
-* work_days (array/int mask)
-* start_time
-* end_time
-* created_at
-
----
-
-### 6.3 clients
-
-Clientes do profissional.
-
-Campos:
-
-* id (PK)
-* user_id (FK → users.id)
-* name
-* contact (nullable)
-* notes (nullable)
-* is_active
-* created_at
+```
+PROJET-WEB-SITE-VELO/
+├── back/                        # API REST (FastAPI)
+│   ├── app/
+│   │   ├── auth/                # Autenticação JWT + 2FA + recuperação de senha
+│   │   ├── models/              # Modelos SQLAlchemy
+│   │   ├── routers/             # Endpoints REST (16 routers)
+│   │   ├── schemas/             # Schemas Pydantic
+│   │   ├── services/            # Lógica de negócio
+│   │   ├── config.py            # Settings via variáveis de ambiente
+│   │   └── database.py          # Sessão do banco
+│   ├── static/
+│   │   ├── avatars/             # Fotos de perfil (geradas em runtime, fora do git)
+│   │   └── medical_records/     # Prontuários criptografados (gerados em runtime, fora do git)
+│   ├── main.py                  # Ponto de entrada da API
+│   ├── migration*.py            # Scripts de migração incremental
+│   ├── requirements.txt
+│   └── .env.example             # Modelo de variáveis de ambiente
+│
+├── front/                       # SPA React
+│   ├── src/
+│   │   ├── components/          # Componentes reutilizáveis (12 componentes)
+│   │   ├── pages/               # Páginas da aplicação (17 páginas)
+│   │   ├── services/            # Clientes de API e push notifications
+│   │   ├── store/               # Estado global (Zustand)
+│   │   ├── locales/             # Traduções (pt, en, es)
+│   │   ├── utils/               # Utilitários
+│   │   └── App.jsx              # Roteamento principal
+│   ├── public/
+│   │   ├── manifest.json        # PWA manifest
+│   │   └── firebase-messaging-sw.js  # Service Worker para push
+│   ├── package.json
+│   └── .env.example
+│
+├── popular_banco.sql            # Script de seed para desenvolvimento
+└── README.md
+```
 
 ---
 
-### 6.4 workplace_clients
+## 🚀 Como Executar Localmente
 
-Tabela de relacionamento N:N entre clientes e locais de trabalho.
+### Pré-requisitos
 
-Campos:
-
-* id (PK)
-* workplace_id (FK)
-* client_id (FK)
-
-Permite:
-
-* Compartilhar clientes entre locais
-* Copiar ou transferir vínculo
+- Python 3.11+
+- Node.js 20+
+- PostgreSQL 14+
 
 ---
 
-### 6.5 appointments
+### 1. Clone o repositório
 
-Agendamentos.
-
-Campos:
-
-* id (PK)
-* user_id (FK)
-* workplace_id (FK)
-* client_id (FK)
-* date
-* start_time
-* end_time
-* status (scheduled | canceled | completed)
-* created_at
+```bash
+git clone https://github.com/Mateus-Wolf/Schedly.git
+cd Schedly
+```
 
 ---
 
-### 6.6 alerts
+### 2. Backend
 
-Alertas configuráveis de agendamento.
+```bash
+cd back
 
-Campos:
+# Criar e ativar ambiente virtual
+python -m venv venv
+venv\Scripts\activate       # Windows
+# source venv/bin/activate  # Linux/macOS
 
-* id (PK)
-* appointment_id (FK)
-* alert_datetime
-* is_triggered
+# Instalar dependências
+pip install -r requirements.txt
 
----
+# Configurar variáveis de ambiente
+copy .env.example .env      # Windows
+# cp .env.example .env      # Linux/macOS
+# Edite o .env com suas credenciais (ver seção abaixo)
 
-## 7. Regras de Negócio
+# Iniciar a API
+uvicorn main:app --reload --port 8000
+```
 
-### 7.1 Agendamentos
-
-* Não é permitido agendar no passado
-* Não é permitido agendar fora do horário do local de trabalho
-* Não é permitido conflito de horário **no mesmo local**
-* É permitido conflito entre locais diferentes, porém:
-
-  * O sistema deve alertar se o intervalo entre agendamentos for menor que o tempo mínimo configurado
-* Horários respeitam os dias da semana configurados no local
-
----
-
-### 7.2 Locais de Trabalho
-
-* Cada local possui dias e horários próprios
-* Um local não depende de endereço obrigatório
-* Endereço é usado apenas para alertas de logística
+A API estará disponível em `http://localhost:8000`.  
+Documentação automática (Swagger): `http://localhost:8000/docs`
 
 ---
 
-### 7.3 Clientes
+### 3. Frontend
 
-* Clientes pertencem ao profissional
-* Clientes podem ser vinculados a múltiplos locais
-* Exclusão lógica (soft delete)
+```bash
+cd front
 
----
+# Instalar dependências
+npm install
 
-## 8. Funcionalidades do Sistema
+# Configurar variáveis de ambiente
+copy .env.example .env      # Windows
+# cp .env.example .env      # Linux/macOS
+# Edite VITE_API_URL se necessário
 
-### 8.1 Autenticação
+# Iniciar em modo desenvolvimento
+npm run dev
+```
 
-* Cadastro
-* Login
-* Logout
-* Refresh token
-
----
-
-### 8.2 Gestão de Locais de Trabalho
-
-* Criar local
-* Editar local
-* Remover local (soft delete)
-* Listagem com:
-
-  * Busca por nome
-  * Filtro por dia da semana
+A aplicação estará em `http://localhost:5173`.
 
 ---
 
-### 8.3 Gestão de Clientes
+### 4. Banco de Dados
 
-* Criar cliente
-* Editar cliente
-* Ativar/desativar cliente
-* Vincular cliente a local
-* Copiar cliente entre locais
-* Listagem com busca e ordenação
+Crie um banco PostgreSQL e configure a `DATABASE_URL` no `.env` do backend.
 
----
+As tabelas são criadas automaticamente pelo SQLAlchemy na primeira execução (`main.py`).
 
-### 8.4 Gestão de Agendamentos
+Para popular com dados de desenvolvimento:
 
-* Criar agendamento
-* Editar agendamento
-* Cancelar agendamento
-* Listagem geral
-* Listagem por local
-* Validações automáticas
+```sql
+-- Execute no seu cliente PostgreSQL (psql, DBeaver, etc.)
+\i popular_banco.sql
+```
 
 ---
 
-### 8.5 Histórico
+## 🔐 Variáveis de Ambiente
 
-#### Histórico Geral
+### `back/.env` (obrigatório)
 
-* Todos os atendimentos realizados
-* Filtros por:
+Copie `back/.env.example` e preencha:
 
-  * Cliente
-  * Data
-  * Local
+| Variável | Descrição |
+|---|---|
+| `DATABASE_URL` | String de conexão PostgreSQL |
+| `SECRET_KEY` | Chave JWT (gere com `python -c "import secrets; print(secrets.token_urlsafe(32))"`) |
+| `ALGORITHM` | Algoritmo JWT (padrão: `HS256`) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do access token |
+| `MAIL_FROM` | E-mail remetente (Gmail) |
+| `MAIL_PASSWORD` | Senha de app do Gmail |
+| `MAIL_SERVER` | Servidor SMTP |
+| `MAIL_PORT` | Porta SMTP (587) |
+| `GEMINI_API_KEY` | Chave da API do Google AI Studio |
+| `FIREBASE_CREDENTIALS_JSON` | JSON da service account do Firebase (como string) |
 
-#### Histórico por Cliente
+> **Como obter as credenciais:**
+> - **Gmail App Password**: [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+> - **Gemini API Key**: [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+> - **Firebase Service Account**: Firebase Console → Configurações → Contas de serviço → Gerar nova chave privada
 
-* Atendimentos de um cliente específico
+### `front/.env` (obrigatório)
 
-#### Histórico por Local
-
-* Atendimentos realizados em um local
-
----
-
-### 8.6 Alertas
-
-* Configuração no momento do agendamento
-* Disparo próximo ao horário
-* Exibição visual no sistema
-
----
-
-### 8.7 Integração com IA (Futuro)
-
-* Entrada em linguagem natural
-* Conversão para payload de agendamento
-* Validação antes de salvar
+| Variável | Descrição |
+|---|---|
+| `VITE_API_URL` | URL base da API (ex: `http://localhost:8000/api/v1`) |
 
 ---
 
-## 9. Fluxos Principais
+## 📋 Funcionalidades
 
-### 9.1 Criar Agendamento
+### 🔑 Autenticação & Segurança
+- Registro e login com JWT (access + refresh token)
+- Autenticação de dois fatores (2FA) por e-mail
+- Recuperação de senha via e-mail
+- Reconhecimento de dispositivos confiáveis
+- Proteção de rotas no frontend
 
-1. Usuário seleciona local
-2. Seleciona cliente
-3. Escolhe data e hora
-4. Sistema valida regras
-5. Sistema alerta se necessário
-6. Usuário confirma
-7. Agendamento é salvo
+### 🏢 Locais de Trabalho
+- Cadastro com nome, descrição, endereço e horários por dia da semana
+- Upload de foto do local
+- Tempo de buffer entre atendimentos configurável
+- Meta mensal de atendimentos por local
+- Múltiplos locais por profissional
+
+### 👥 Clientes
+- CRUD completo com soft delete
+- Vínculo de clientes a múltiplos locais
+- Histórico de atendimentos por cliente
+- Prontuários clínicos com upload criptografado de documentos
+
+### 📆 Agendamentos
+- Criação com validação automática de conflitos
+- Validação de dias e horários do local
+- Status: agendado, cancelado, concluído
+- Alertas configuráveis antes do horário
+- Visualização em calendário mensal
+- Agendamentos públicos (link compartilhável para clientes)
+- Suporte a parcelamento de pagamentos
+
+### 👩‍⚕️ Equipe (Staff)
+- Cadastro de membros da equipe
+- Controle de acesso por local de trabalho
+- Permissões de documentos clínicos
+
+### 💰 Financeiro
+- Registro de pagamentos por atendimento
+- Controle de parcelas
+- Relatório financeiro com exportação Excel/PDF
+
+### 📊 Métricas & Dashboard
+- Visão geral de agendamentos e receita
+- Metas mensais com acompanhamento histórico
+- Avaliações de clientes
+- Gráficos e indicadores de performance
+
+### 🤖 Assistente IA (Gemini)
+- Chatbot integrado para criar agendamentos em linguagem natural
+- Conversão de texto para payload de agendamento validado
+
+### 🔔 Notificações
+- Push notifications via Firebase Cloud Messaging
+- Central de notificações in-app
+- Preferências configuráveis por tipo de evento
+
+### 🌍 Internacionalização
+- Português (PT-BR) — padrão
+- Inglês (EN)
+- Espanhol (ES)
 
 ---
 
-### 9.2 Copiar Cliente entre Locais
+## 🗄️ Modelos Principais do Banco
 
-1. Usuário seleciona cliente
-2. Escolhe novo local
-3. Sistema cria vínculo
+| Tabela | Descrição |
+|---|---|
+| `users` | Profissionais cadastrados |
+| `workplaces` | Locais de trabalho |
+| `clients` | Clientes dos profissionais |
+| `workplace_clients` | Vínculo N:N local ↔ cliente |
+| `appointments` | Agendamentos |
+| `alerts` | Alertas de agendamento |
+| `staff_members` | Membros da equipe |
+| `staff_workplace_access` | Acesso da equipe por local |
+| `medical_records` | Prontuários clínicos |
+| `push_subscriptions` | Tokens FCM dos dispositivos |
+| `notification_logs` | Histórico de notificações |
+| `password_resets` | Tokens de recuperação de senha |
+| `recognized_devices` | Dispositivos confiáveis (2FA) |
+| `reviews` | Avaliações de clientes |
 
 ---
 
-## 10. Requisitos Não Funcionais
+## 🔒 Segurança
 
-* Interface responsiva
-* Performance aceitável para até milhares de registros
-* Código organizado e modular
-* Logs básicos
-* Tratamento global de erros
+- Senhas armazenadas com **bcrypt**
+- Autenticação via **JWT** com tokens de curta duração
+- **Refresh token** em cookie `httpOnly`
+- Verificação de **propriedade do recurso** em todos os endpoints (nenhum usuário acessa dados de outro)
+- Prontuários armazenados **criptografados** em disco
+- Variáveis sensíveis exclusivamente via **variáveis de ambiente** (nunca hardcoded)
+- **CORS** configurado explicitamente
+- Arquivos de mídia gerados em runtime **excluídos do repositório** via `.gitignore`
+
+---
+
+## 📁 Routers da API
+
+| Router | Prefixo | Descrição |
+|---|---|---|
+| auth | `/api/v1/auth` | Autenticação, 2FA, refresh, dispositivos |
+| workplaces | `/api/v1/workplaces` | CRUD de locais de trabalho |
+| clients | `/api/v1/clients` | CRUD de clientes |
+| appointments | `/api/v1/appointments` | Agendamentos e validações |
+| public_appointments | `/api/v1/public` | Link público para agendamento |
+| alerts | `/api/v1/alerts` | Alertas de agendamento |
+| dashboard | `/api/v1/dashboard` | Resumo do painel |
+| financial | `/api/v1/financial` | Controle financeiro |
+| medical_records | `/api/v1/medical-records` | Prontuários clínicos |
+| staff | `/api/v1/staff` | Gestão de equipe |
+| notifications | `/api/v1/notifications` | Central de notificações |
+| push | `/api/v1/push` | Subscriptions FCM |
+| profile | `/api/v1/profile` | Perfil do usuário |
+| reviews | `/api/v1/reviews` | Avaliações |
+| gemini | `/api/v1/gemini` | Assistente IA |
+
+---
+
+## 📄 Licença
+
+Este projeto é de uso privado. Todos os direitos reservados ao autor.
+
+---
+
+*Desenvolvido com 💙 por [Mateus Wolf](https://github.com/Mateus-Wolf)*

@@ -1,25 +1,52 @@
+# ============================================================
 # IDE
+# ============================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# ============================================================
 # OS
+# ============================================================
 .DS_Store
 Thumbs.db
 
-# Node
+# ============================================================
+# Node / Frontend
+# ============================================================
 node_modules/
 dist/
 dist-ssr/
 *.local
-.env
+front/.env
 
-# Python
+# ============================================================
+# Python / Backend
+# ============================================================
+back/.env
 back/venv/
 back/.venv/
 back/__pycache__/
+back/**/__pycache__/
 back/*.py[cod]
 back/*.egg-info/
 back/dist/
 back/build/
+
+# ============================================================
+# Testes
+# ============================================================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ============================================================
+# Arquivos de usuário gerados em runtime (NUNCA subir ao repo)
+# ============================================================
+back/static/avatars/*
+back/static/medical_records/*
+
+# Manter as pastas vazias no repositório
+!back/static/avatars/.gitkeep
+!back/static/medical_records/.gitkeep

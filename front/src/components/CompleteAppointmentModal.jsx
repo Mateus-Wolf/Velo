@@ -56,8 +56,9 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 25 } }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="relative z-10 w-full max-w-md rounded-2xl glass-strong p-6 shadow-2xl"
+                        className="relative z-10 w-full max-w-md rounded-2xl glass-strong shadow-2xl max-h-[min(95vh,800px)] flex flex-col overflow-hidden"
                     >
+                        <div className="p-6 flex flex-col h-full">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-3">
@@ -77,6 +78,8 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
                                 <HiOutlineX size={20} />
                             </button>
                         </div>
+
+                        <div className="flex-1 overflow-y-auto pr-1 -mr-1">
 
                         {/* Valor estimado */}
                         {appointment?.price > 0 && (
@@ -204,7 +207,9 @@ export default function CompleteAppointmentModal({ isOpen, onClose, onConfirm, l
                                 )}
                             </motion.button>
                         </div>
-                    </motion.div>
+                    </div>
+                </div>
+            </motion.div>
                 </motion.div>
             )}
         </AnimatePresence>

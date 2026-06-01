@@ -19,6 +19,7 @@ export default function UserDropdown() {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const ref = useRef(null);
 
     const isStaff = user?.role === 'staff';
@@ -43,16 +44,12 @@ export default function UserDropdown() {
                 className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-surface-200/70 hover:bg-white/10 hover:text-white transition-all"
             >
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600/20 text-brand-400 overflow-hidden border border-brand-500/20">
-                    {user?.avatar_url ? (
+                    {user?.avatar_url && !imgError ? (
                         <img 
                             src={user.avatar_url} 
                             alt={user.name} 
                             className="h-full w-full object-cover"
-                            onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = ''; // Fallback effect
-                                e.target.parentElement.innerHTML = '<svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" height="13" width="13" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>';
-                            }}
+                            onError={() => setImgError(true)}
                         />
                     ) : (
                         <HiOutlineUser size={13} />
