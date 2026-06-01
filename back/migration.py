@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql://postgres:1234@localhost:5432/Schedly"
+DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql://postgres:1234@localhost:5432/Velo"
 engine = create_engine(DATABASE_URL)
 
 def run_migration():

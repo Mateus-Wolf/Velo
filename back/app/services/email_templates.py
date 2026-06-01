@@ -25,7 +25,7 @@ def appointment_package_html(
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); border-radius: 16px 16px 0 0; padding: 32px 24px; text-align: center;">
                 <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
-                    ✨ Schedly
+                    ✨ Velo
                 </h1>
                 <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">
                     Pacote de Agendamentos

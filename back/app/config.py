@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Configurações da aplicação carregadas do .env"""
 
-    DATABASE_URL: str = "postgresql://postgres:1234@localhost:5432/Schedly"
+    DATABASE_URL: str = "postgresql://postgres:1234@localhost:5432/Velo"
     SECRET_KEY: str = "sua-chave-secreta-aqui-troque-em-producao"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
