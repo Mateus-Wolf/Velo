@@ -401,16 +401,16 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
                         initial={{ opacity: 0, y: 60, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 28 } }}
                         exit={{ opacity: 0, y: 40, scale: 0.96 }}
-                        className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-3xl glass-strong shadow-2xl"
+                        className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-3xl glass-strong shadow-2xl max-h-[min(95vh,800px)] flex flex-col overflow-hidden"
                     >
-                        <div className="flex items-center justify-between border-b border-white/10 bg-surface-950/80 backdrop-blur-xl px-6 py-4 rounded-t-3xl">
+                        <div className="flex items-center justify-between border-b border-white/10 bg-surface-950/80 backdrop-blur-xl px-6 py-4 rounded-t-3xl flex-shrink-0">
                             <h2 className="text-lg font-semibold text-gradient">{t('calendar.modals.edit.title', 'Editar Agendamento')}</h2>
                             <button onClick={onClose} className="rounded-xl p-2 text-surface-200/50 hover:bg-white/10 hover:text-white transition-all">
                                 <HiOutlineX size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
                             <AnimatePresence>
                                 {error && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
@@ -669,16 +669,16 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                         initial={{ opacity: 0, y: 60, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 28 } }}
                         exit={{ opacity: 0, y: 40, scale: 0.96 }}
-                        className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-3xl glass-strong shadow-2xl"
+                        className="relative z-10 w-full max-w-md rounded-t-3xl sm:rounded-3xl glass-strong shadow-2xl max-h-[min(95vh,800px)] flex flex-col overflow-hidden"
                     >
-                        <div className="flex items-center justify-between border-b border-white/10 bg-surface-950/80 backdrop-blur-xl px-6 py-4 rounded-t-3xl">
+                        <div className="flex items-center justify-between border-b border-white/10 bg-surface-950/80 backdrop-blur-xl px-6 py-4 rounded-t-3xl flex-shrink-0">
                             <h2 className="text-lg font-semibold text-gradient">{t('calendar.modals.create.title', 'Novo Agendamento')}</h2>
                             <button onClick={onClose} className="rounded-xl p-2 text-surface-200/50 hover:bg-white/10 hover:text-white transition-all">
                                 <HiOutlineX size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
                             <AnimatePresence>
                                 {error && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
