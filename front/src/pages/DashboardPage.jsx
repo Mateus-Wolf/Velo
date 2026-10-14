@@ -15,13 +15,14 @@ import {
     HiOutlineSearch,
     HiOutlineSortAscending,
     HiOutlineClipboardList,
+    HiOutlineTrendingUp,
 } from 'react-icons/hi';
 import { HiSparkles } from 'react-icons/hi2';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 import HeaderNav from '../components/HeaderNav';
 import WorkplaceModal from '../components/WorkplaceModal';
-import { useWorkplaces } from '../services/queries';
+import { useWorkplaces, usePendingCount } from '../services/queries';
 import { onWorkplaceCreated, onWorkplaceUpdated, onWorkplaceDeleted } from '../services/cache';
 
 const DAY_NAMES = {
@@ -280,6 +281,7 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const { data: workplaces = [], isLoading: loading } = useWorkplaces();
+    const { data: pendingCount = 0 } = usePendingCount(!!user);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingWorkplace, setEditingWorkplace] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -394,6 +396,61 @@ export default function DashboardPage() {
                         </motion.button>
                     )}
                 </div>
+
+                {/* Welcome & Quick Executive Summary Banner */}
+                {!loading && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 glass rounded-2xl p-5 sm:p-6 border border-brand-500/15 relative overflow-hidden"
+                    >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                    <span className="text-xl">👋</span>
+                                    <h2 className="text-lg sm:text-xl font-bold text-surface-50">
+                                        Olá, {user?.name ? user.name.split(' ')[0] : 'Profissional'}!
+                                    </h2>
+                                    {user?.crm && (
+                                        <span className="text-xs bg-brand-500/15 text-brand-500 border border-brand-500/20 px-2 py-0.5 rounded-md font-semibold">
+                                            {user.crm}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs sm:text-sm text-surface-200/60">
+                                    Sua agenda e locais de atendimento estão operando normalmente.
+                                </p>
+                            </div>
+
+                            {/* Quick stat badges and shortcut */}
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/5 px-3 py-2 text-xs text-surface-200/80">
+                                    <HiOutlineOfficeBuilding size={16} className="text-brand-500" />
+                                    <span className="font-semibold text-surface-50">{workplaces.length}</span> {workplaces.length === 1 ? 'local' : 'locais ativos'}
+                                </div>
+
+                                {pendingCount > 0 && (
+                                    <button
+                                        onClick={() => navigate('/pending-appointments')}
+                                        className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/25 px-3 py-2 text-xs font-semibold text-amber-500 hover:bg-amber-500/20 transition-all cursor-pointer"
+                                        title="Ver agendamentos pendentes de confirmação"
+                                    >
+                                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                                        <span>{pendingCount} pendentes</span>
+                                    </button>
+                                )}
+
+                                <button
+                                    onClick={() => navigate('/metrics')}
+                                    className="flex items-center gap-2 rounded-xl gradient-brand px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-brand-500/20 hover:opacity-95 transition-all cursor-pointer"
+                                >
+                                    <HiOutlineTrendingUp size={16} />
+                                    <span>Ver Métricas & Faturamento</span>
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Loading skeleton */}
                 {loading && (

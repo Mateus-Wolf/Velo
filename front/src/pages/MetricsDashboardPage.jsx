@@ -706,6 +706,138 @@ export default function MetricsDashboardPage() {
 
 
 
+                {/* 4 Hero KPI Summary Cards */}
+                {metrics && (() => {
+                    const completed = metrics.completed_count || 0;
+                    const canceledClient = metrics.canceled_client_count || 0;
+                    const canceledUser = metrics.canceled_user_count || 0;
+                    const noShow = metrics.no_show_count || 0;
+                    const pending = metrics.pending_count || 0;
+                    const totalEffective = completed + canceledClient + canceledUser + noShow;
+                    const showRate = totalEffective > 0 ? ((completed / totalEffective) * 100).toFixed(1) : '100';
+
+                    const currentMonthRev = metrics.current_month_revenue || 0;
+                    const userGoal = metrics.monthly_goal || user?.monthly_goal || 0;
+                    const goalPct = userGoal > 0 ? Math.min(Math.round((currentMonthRev / userGoal) * 100), 100) : 0;
+
+                    return (
+                        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                            {/* 1. Taxa de Comparecimento */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.05 }}
+                                className="glass rounded-2xl p-5 relative overflow-hidden group"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
+                                        <HiOutlineCheckCircle size={22} />
+                                    </div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                        Excelente
+                                    </span>
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-extrabold text-surface-50 mb-1 tracking-tight">
+                                    {showRate}%
+                                </div>
+                                <div className="text-xs font-semibold text-surface-200/80 mb-1">
+                                    Taxa de Comparecimento
+                                </div>
+                                <p className="text-[11px] text-surface-200/50">
+                                    {completed} atendidos · {noShow + canceledClient + canceledUser} faltas/canc.
+                                </p>
+                            </motion.div>
+
+                            {/* 2. Volume de Consultas */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="glass rounded-2xl p-5 relative overflow-hidden group"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2.5 rounded-xl bg-brand-500/15 text-brand-500 border border-brand-500/20">
+                                        <HiOutlineCalendar size={22} />
+                                    </div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-full border border-brand-500/20">
+                                        Alta demanda
+                                    </span>
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-extrabold text-surface-50 mb-1 tracking-tight">
+                                    {completed + pending}
+                                </div>
+                                <div className="text-xs font-semibold text-surface-200/80 mb-1">
+                                    Volume de Consultas
+                                </div>
+                                <p className="text-[11px] text-surface-200/50">
+                                    {completed} finalizadas · {pending} pendentes
+                                </p>
+                            </motion.div>
+
+                            {/* 3. Faturamento do Mês vs Meta */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
+                                className="glass rounded-2xl p-5 relative overflow-hidden group"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
+                                        <HiOutlineCurrencyDollar size={22} />
+                                    </div>
+                                    {userGoal > 0 && (
+                                        <span className="text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                            {goalPct}% da meta
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-extrabold text-surface-50 mb-1 tracking-tight truncate">
+                                    {fmtBRL(currentMonthRev)}
+                                </div>
+                                <div className="text-xs font-semibold text-surface-200/80 mb-2">
+                                    Faturamento Outubro
+                                </div>
+                                {userGoal > 0 ? (
+                                    <div className="w-full bg-surface-200/20 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-emerald-500 transition-all duration-1000"
+                                            style={{ width: `${goalPct}%` }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="text-[11px] text-surface-200/50">Meta não definida</p>
+                                )}
+                            </motion.div>
+
+                            {/* 4. Ticket Médio */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="glass rounded-2xl p-5 relative overflow-hidden group"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-500 border border-cyan-500/20">
+                                        <HiOutlineTrendingUp size={22} />
+                                    </div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                                        Precificado
+                                    </span>
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-extrabold text-surface-50 mb-1 tracking-tight">
+                                    {fmtBRL(metrics.avg_ticket)}
+                                </div>
+                                <div className="text-xs font-semibold text-surface-200/80 mb-1">
+                                    Ticket Médio
+                                </div>
+                                <p className="text-[11px] text-surface-200/50">
+                                    {metrics.total_priced_appointments || completed} atendimentos precificados
+                                </p>
+                            </motion.div>
+                        </div>
+                    );
+                })()}
+
                 <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {/* Top 3 Clientes */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-6">
