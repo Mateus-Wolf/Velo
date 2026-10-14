@@ -1,8 +1,9 @@
+import AppointmentReveal from '../components/AppointmentReveal';
 import AppointmentCreationSummary from '../components/AppointmentCreationSummary';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
     HiOutlineChevronLeft,
     HiOutlineChevronRight,
@@ -857,11 +858,12 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
                 <p className="text-sm text-surface-200/40 text-center py-6">{t('calendar.dayPanel.empty', 'Nenhum agendamento neste dia')}</p>
             ) : (
                 <div className="space-y-3">
+                    <AnimatePresence>
                     {dayAppts.map((a) => {
                         const st = STATUS_MAP[a.status] || STATUS_MAP.scheduled;
                         const isTerminal = TERMINAL_STATUSES.includes(a.status);
                         return (
-                            <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                            <AppointmentReveal key={a.id}
                                 className={`rounded-xl border ${st.border} ${st.bg} p-3.5`}
                             >
                                 <div className="flex items-center justify-between mb-1.5">
@@ -918,9 +920,10 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
                                         </motion.button>
                                     </div>
                                 )}
-                            </motion.div>
+                            </AppointmentReveal>
                         );
                     })}
+                    </AnimatePresence>
                 </div>
             )}
         </Wrapper>
@@ -933,6 +936,7 @@ function DayPanel({ date, appointments, onClose, workplaceMap, onEdit, onCancel,
 export default function CalendarPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const reduceMotion = useReducedMotion();
     const { user } = useAuthStore();
 
     const today = new Date();
@@ -1052,7 +1056,9 @@ export default function CalendarPage() {
                 return name.toLowerCase().includes(q) || String(a.client_id).includes(q);
             });
         }
-        return filtered;
+        return [...filtered].sort((a, b) =>
+            a.date.localeCompare(b.date) || (a.start_time || '').localeCompare(b.start_time || '')
+        );
     }, [appointments, filterWorkplace, searchClient]);
 
     const appointmentsByDate = useMemo(() => {
@@ -1348,7 +1354,6 @@ export default function CalendarPage() {
 
                                             const key = dKey(day);
                                             const dayAppts = appointmentsByDate[key] || [];
-                                            const hasAppts = dayAppts.length > 0;
                                             const cellClasses = getDayCellClasses(day);
                                             const isSelected = selectedDate && key === dKey(selectedDate);
 
@@ -1359,23 +1364,31 @@ export default function CalendarPage() {
                                                     className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all duration-200 ${cellClasses}`}
                                                 >
                                                     <span className="text-sm font-medium">{day.getDate()}</span>
-                                                    {hasAppts && (
-                                                        <div className="flex gap-0.5 mt-0.5">
-                                                            {dayAppts.slice(0, 3).map((a, idx) => {
+                                                    <div className="flex gap-0.5 mt-0.5 items-center">
+                                                        <AnimatePresence initial={false}>
+                                                            {dayAppts.slice(0, 3).map((a) => {
                                                                 const st = STATUS_MAP[a.status] || STATUS_MAP.scheduled;
                                                                 return (
-                                                                    <div key={idx}
+                                                                    <motion.span key={a.id}
+                                                                        layout={reduceMotion ? false : 'position'}
+                                                                        initial={{ opacity: 0, scale: reduceMotion ? 1 : 0 }}
+                                                                        animate={{ opacity: 1, scale: reduceMotion ? 1 : [0, 1.35, 1] }}
+                                                                        exit={{ opacity: 0, scale: reduceMotion ? 1 : 0 }}
+                                                                        transition={{ duration: reduceMotion ? 0.12 : 0.5 }}
                                                                         className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : st.dot}`}
                                                                     />
                                                                 );
                                                             })}
                                                             {dayAppts.length > 3 && (
-                                                                <span className={`text-[8px] ml-0.5 ${isSelected ? 'text-white/80' : 'text-surface-200/40'}`}>
+                                                                <motion.span key={`count-${dayAppts.length}`}
+                                                                    initial={{ opacity: 0, y: reduceMotion ? 0 : 4 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    className={`text-[8px] ml-0.5 ${isSelected ? 'text-white/80' : 'text-surface-200/40'}`}>
                                                                     +{dayAppts.length - 3}
-                                                                </span>
+                                                                </motion.span>
                                                             )}
-                                                        </div>
-                                                    )}
+                                                        </AnimatePresence>
+                                                    </div>
                                                 </motion.button>
                                             );
                                         })}
@@ -1426,19 +1439,20 @@ export default function CalendarPage() {
                                                     <div key={`${key}-${hour}`}
                                                         onClick={() => setSelectedDate(wd)}
                                                         className="border-l border-white/[0.03] p-0.5 relative cursor-pointer hover:bg-white/[0.02] transition-colors min-h-[52px]">
+                                                        <AnimatePresence initial={false}>
                                                         {dayAppts.map((a) => {
                                                             const st = STATUS_MAP[a.status] || STATUS_MAP.scheduled;
                                                             return (
-                                                                <motion.div key={a.id}
-                                                                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                                                                <AppointmentReveal key={a.id}
                                                                     onClick={(e) => { e.stopPropagation(); setEditTarget(a); }}
                                                                     className={`rounded-lg ${st.bg} ${st.border} border px-1.5 py-1 mb-0.5 cursor-pointer hover:brightness-125 transition-all`}
                                                                 >
                                                                     <p className="text-[10px] font-semibold text-surface-50 truncate">{a.client_name || `#${a.client_id}`}</p>
                                                                     <p className="text-[9px] text-surface-200/50">{fmtTime(a.start_time)}–{fmtTime(a.end_time)}</p>
-                                                                </motion.div>
+                                                                </AppointmentReveal>
                                                             );
                                                         })}
+                                                        </AnimatePresence>
                                                     </div>
                                                 );
                                             })}
@@ -1474,12 +1488,12 @@ export default function CalendarPage() {
                                                     <span className="text-xs font-medium text-surface-200/30">{`${String(hour).padStart(2, '0')}:00`}</span>
                                                 </div>
                                                 <div className="flex-1 border-l border-white/[0.03] p-1.5 space-y-1">
+                                                    <AnimatePresence initial={false}>
                                                     {hourAppts.map((a) => {
                                                         const st = STATUS_MAP[a.status] || STATUS_MAP.scheduled;
                                                         const isTerminal = TERMINAL_STATUSES.includes(a.status);
                                                         return (
-                                                            <motion.div key={a.id}
-                                                                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                                                            <AppointmentReveal key={a.id}
                                                                 className={`rounded-xl ${st.bg} ${st.border} border p-3 cursor-pointer hover:brightness-125 transition-all`}
                                                                 onClick={() => setEditTarget(a)}
                                                             >
@@ -1514,9 +1528,10 @@ export default function CalendarPage() {
                                                                         </button>
                                                                     </div>
                                                                 )}
-                                                            </motion.div>
+                                                            </AppointmentReveal>
                                                         );
                                                     })}
+                                                    </AnimatePresence>
                                                     {hourAppts.length === 0 && (
                                                         <div className="h-full min-h-[44px]" />
                                                     )}

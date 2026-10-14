@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { FiMessageSquare, FiX, FiSend, FiMaximize2, FiPlus, FiClock, FiChevronLeft, FiTrash2 } from 'react-icons/fi';
 import api from '../services/api';
-import { useTranslation } from 'react-i18next';
+import { onAppointmentsBulkChanged } from '../services/cache';
 import useAuthStore from '../store/useAuthStore';
 
 const INIT_SIZE = { width: '384px', height: '450px' };
@@ -17,23 +17,29 @@ const defaultMessage = {
 
 
 export default function GeminiChatbot() {
-    const { t } = useTranslation();
+    const token = useAuthStore((state) => state.token);
+    const user = useAuthStore((state) => state.user);
+    if (!token || user?.role !== 'admin') return null;
+    return <GeminiChatSession key={user.id} storageKey={`velo_chatbot_sessions_${user.id}`} />;
+}
+
+function GeminiChatSession({ storageKey }) {
     const [isOpen, setIsOpen] = useState(false);
 
     // Sessions State
     const [sessions, setSessions] = useState(() => {
-        const saved = localStorage.getItem('velo_chatbot_sessions');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            return Array.isArray(saved) ? saved : [];
+        } catch {
+            return [];
+        }
     });
     const [currentSessionId, setCurrentSessionId] = useState(null);
     const [showHistory, setShowHistory] = useState(false);
 
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
-    // Auth State
-    const token = useAuthStore((state) => state.token);
-    const user = useAuthStore((state) => state.user);
 
     const messagesEndRef = useRef(null);
     const modalRef = useRef(null);
@@ -53,8 +59,8 @@ export default function GeminiChatbot() {
 
     // Save sessions to localStorage whenever they change
     useEffect(() => {
-        localStorage.setItem('velo_chatbot_sessions', JSON.stringify(sessions));
-    }, [sessions]);
+        localStorage.setItem(storageKey, JSON.stringify(sessions));
+    }, [sessions, storageKey]);
 
     // Session Timeout & Init Logic
     useEffect(() => {
@@ -96,8 +102,6 @@ export default function GeminiChatbot() {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [sessions, currentSessionId, isOpen, showHistory]);
-
-    if (!token || user?.role !== 'admin') return null;
 
     // --- Core Session Functions ---
     const createNewSession = () => {
@@ -182,7 +186,16 @@ export default function GeminiChatbot() {
         setIsLoading(true);
 
         try {
-            const response = await api.post('/gemini/chat', { message: userText });
+            const history = currentSession.messages
+                .filter(message => message.id !== defaultMessage.id)
+                .slice(-20)
+                .map(message => ({
+                    role: message.sender === 'user' ? 'user' : 'assistant',
+                    text: message.text.slice(0, 4000),
+                }));
+            const response = await api.post('/gemini/chat', { message: userText, history });
+            // O assistente pode criar consultas; revalida a agenda sem recarregar a tela.
+            onAppointmentsBulkChanged();
 
             setSessions(prev => prev.map(s => {
                 if (s.id === currentSessionId) {
@@ -300,7 +313,7 @@ export default function GeminiChatbot() {
         <div className={getContainerClass()}>
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
+                    <Motion.div
                         ref={modalRef}
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -452,6 +465,7 @@ export default function GeminiChatbot() {
                                         </div>
                                     ))}
 
+                                    {isLoading && <p role="status" className="text-sm text-surface-200">Consultando sua agenda...</p>}
                                     <div ref={messagesEndRef} />
                                 </div>
 
@@ -460,6 +474,7 @@ export default function GeminiChatbot() {
                                     <form onSubmit={handleSend} className="flex gap-2 relative">
                                         <input
                                             type="text"
+                                            maxLength={4000}
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
                                             placeholder="Digite sua mensagem..."
@@ -477,12 +492,12 @@ export default function GeminiChatbot() {
                                 </div>
                             </>
                         )}
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
 
             {/* Floating Button */}
-            <motion.button
+            <Motion.button
                 key={position + '-' + dragCounter}
                 drag
                 dragMomentum={false}
@@ -494,7 +509,7 @@ export default function GeminiChatbot() {
                 className="w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg shadow-brand-600/30 flex items-center justify-center hover:shadow-brand-600/50 transition-shadow focus:outline-none shrink-0"
             >
                 {isOpen ? <FiX className="w-6 h-6" /> : <FiMessageSquare className="w-6 h-6" />}
-            </motion.button>
+            </Motion.button>
         </div>
     );
 }
