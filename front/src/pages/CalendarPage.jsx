@@ -1149,8 +1149,8 @@ export default function CalendarPage() {
             return 'bg-brand-600/20 text-brand-200 border-2 border-brand-400/40 font-bold';
         }
         if (isPast && hasAppts) {
-            // Past with appointments — muted violet
-            return 'bg-violet-500/10 text-violet-300/60 border border-violet-500/15';
+            // Past with appointments — soft sky blue
+            return 'bg-sky-500/10 text-sky-700/80 dark:text-sky-300/70 border border-sky-500/20';
         }
         if (isPast) {
             // Past without appointments — dimmed
@@ -1549,7 +1549,7 @@ export default function CalendarPage() {
                                             <div className="flex flex-wrap gap-x-5 gap-y-1.5 justify-center text-xs text-surface-200/50">
                                                 <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-brand-400/50 border border-brand-400/60" /> {t('calendar.legend.today', 'Hoje')}</span>
                                                 <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-brand-500/30" /> {t('calendar.legend.futureAppt', 'Futuro c/ consulta')}</span>
-                                                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-violet-400/40" /> {t('calendar.legend.pastAppt', 'Passado c/ consulta')}</span>
+                                                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-sky-500/50" /> {t('calendar.legend.pastAppt', 'Passado c/ consulta')}</span>
                                                 <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-surface-200/15" /> {t('calendar.legend.pastNoAppt', 'Passado s/ consulta')}</span>
                                             </div>
                                         </motion.div>

@@ -128,9 +128,9 @@ export default function MetricsDashboardPage() {
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
 
-        // Cores do Projeto (Sleek Modern Palette)
-        const brandColor = [79, 70, 229]; // indigo-600
-        const accentColor = [139, 92, 246]; // violet-500
+        // Cores do Projeto (Sleek Modern Sky Palette)
+        const brandColor = [2, 132, 199]; // sky-600
+        const accentColor = [14, 165, 233]; // sky-500
         const surfaceColor = [248, 250, 252]; // slate-50
         const textMain = [15, 23, 42]; // slate-900
         const textMuted = [100, 116, 139]; // slate-500
@@ -147,9 +147,7 @@ export default function MetricsDashboardPage() {
         doc.rect(0, 0, pageWidth, 55, 'F');
 
         // Elemento decorativo sutil (círculos sobrepostos)
-        // Simulando a transparência de 10% de branco sobre a brandColor (indigo-600)
-        // Indigo-600 = [79, 70, 229]. Branco a 10% = aprox [96, 88, 231]
-        doc.setFillColor(96, 88, 231);
+        doc.setFillColor(56, 189, 248);
         doc.circle(pageWidth - 20, 15, 40, 'F');
         doc.circle(pageWidth - 10, 5, 25, 'F');
 

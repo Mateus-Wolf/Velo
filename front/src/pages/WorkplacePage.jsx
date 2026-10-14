@@ -126,7 +126,7 @@ function ClientCard({ client, index, onEdit, onDelete, onCopyMove, onHistory, on
                                 whileHover={{ scale: 1.15 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); onCopyMove(client); }}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-surface-200/50 hover:bg-violet-600/20 hover:text-violet-400 hover:border-violet-500/30 transition-all opacity-0 group-hover:opacity-100"
+                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-surface-200/50 hover:bg-brand-500/20 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-500/30 transition-all opacity-0 group-hover:opacity-100"
                                 title={t('workplace.card.copyMove', 'Copiar / Mover para outro local')}
                             >
                                 <HiOutlineClipboardCopy size={12} />

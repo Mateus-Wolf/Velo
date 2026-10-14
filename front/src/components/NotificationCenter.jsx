@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 function getTypeInfo(type, t) {
     if (type?.includes('30min')) return { label: t('notifCenter.in30min', 'Em 30 min'), color: 'text-amber-400', bg: 'bg-amber-500/15 border-amber-500/25' };
     if (type?.includes('1day')) return { label: t('notifCenter.in1day', 'Em 1 dia'), color: 'text-blue-400', bg: 'bg-blue-500/15 border-blue-500/25' };
-    if (type?.includes('2days')) return { label: t('notifCenter.in2days', 'Em 2 dias'), color: 'text-purple-400', bg: 'bg-purple-500/15 border-purple-500/25' };
+    if (type?.includes('2days')) return { label: t('notifCenter.in2days', 'Em 2 dias'), color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/15 border-cyan-500/25' };
     return { label: t('notifCenter.reminder', 'Lembrete'), color: 'text-brand-400', bg: 'bg-brand-500/15 border-brand-500/25' };
 }
 
