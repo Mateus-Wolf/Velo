@@ -354,6 +354,6 @@ Regras de Formatação:
             model='gemini-2.5-flash',
             contents=prompt,
         )
-        return response.text
+        return response.text or _generate_smart_fallback_insights(metrics, current_user)
     except Exception as e:
         return _generate_smart_fallback_insights(metrics, current_user)
