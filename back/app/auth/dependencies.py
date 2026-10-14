@@ -49,6 +49,7 @@ def get_current_user(
 
         staff = db.query(StaffMember).filter(
             StaffMember.id == int(staff_id),
+            StaffMember.admin_user_id == int(admin_id),
             StaffMember.is_active == True,
         ).first()
         if not staff:
@@ -95,6 +96,7 @@ def get_current_account(
 
         staff = db.query(StaffMember).filter(
             StaffMember.id == int(staff_id),
+            StaffMember.admin_user_id == int(admin_id),
             StaffMember.is_active == True,
         ).first()
         if not staff:

@@ -11,6 +11,7 @@ from app.schemas.appointment import (
     AppointmentCreate,
     AppointmentUpdate,
     AppointmentResponse,
+    AppointmentCreationResponse,
     ResolveAppointmentRequest,
     CompleteAppointmentRequest,
 )
@@ -75,23 +76,15 @@ def get_pending_count(
     account: CurrentAccount = Depends(get_current_account),
 ):
     """Retorna apenas a contagem de agendamentos pendentes (endpoint leve)."""
-    # Se for staff, filtrar count por workplaces permitidos? 
-    # Por simplicidade, retornamos o count do admin, já que staff opera no escopo do admin.
-    # Mas se quisermos ser rigorosos:
+    appointment_service._auto_mark_pending(db, account.user.id)
+    from app.models.appointment import Appointment
+    query = db.query(Appointment).filter(
+        Appointment.user_id == account.user.id, Appointment.status == "pending",
+    )
     if account.role == "staff":
-        from app.models.appointment import Appointment
-        from app.models.workplace import Workplace
-        allowed_ids = account.permissions.get("allowed_workplace_ids", [])
-        count = db.query(Appointment).join(Workplace).filter(
-            Workplace.user_id == account.user.id,
-            Workplace.id.in_(allowed_ids),
-            Appointment.status == "pending",
-            Appointment.is_active == True
-        ).count()
-        return {"count": count}
-        
-    count = appointment_service.count_pending(db, account.user.id)
-    return {"count": count}
+        query = query.filter(Appointment.workplace_id.in_(account.permissions.get("allowed_workplace_ids", [])))
+    return {"count": query.count()}
+
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
@@ -114,10 +107,11 @@ def get_appointment(
     return appt
 
 
-@router.post("/", response_model=list[AppointmentResponse], status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=list[AppointmentResponse] | AppointmentCreationResponse, status_code=status.HTTP_201_CREATED)
 def create_appointment(
     data: AppointmentCreate,
     background_tasks: BackgroundTasks,
+    include_summary: bool = False,
     db: Session = Depends(get_db),
     account: CurrentAccount = Depends(get_current_account),
 ):
@@ -145,6 +139,8 @@ def create_appointment(
             f"agendou <strong>{client_name}</strong> para {appt_date} às {appt_time}",
         )
 
+    if include_summary:
+        return {"appointments": list(result), "skipped": result.skipped}
     return result
 
 
@@ -164,6 +160,12 @@ def update_appointment(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para alterar o status de agendamentos",
             )
+
+    appointment_service._lock_schedule(db, account.user.id)
+    get_appointment(appointment_id, db, account)
+    if account.role == "staff" and data.workplace_id is not None:
+        if data.workplace_id not in account.permissions.get("allowed_workplace_ids", []):
+            raise HTTPException(status_code=403, detail="Acesso negado ao local de destino")
 
     result = appointment_service.update_appointment(db, appointment_id, account.user.id, data, background_tasks)
 
@@ -203,6 +205,22 @@ def cancel_appointment(
                 detail="Você não tem permissão para cancelar agendamentos",
             )
 
+    appointment_service._lock_schedule(db, account.user.id)
+    get_appointment(appointment_id, db, account)
+    if cancel_all_future and account.role == "staff":
+        from app.models.appointment import Appointment
+        current = appointment_service.get_appointment(db, appointment_id, account.user.id)
+        if current.recurrence_id:
+            forbidden = db.query(Appointment).filter(
+                Appointment.user_id == account.user.id,
+                Appointment.recurrence_id == current.recurrence_id,
+                Appointment.date >= current.date,
+                ~Appointment.status.in_(appointment_service.INACTIVE_STATUSES),
+                ~Appointment.workplace_id.in_(account.permissions.get("allowed_workplace_ids", [])),
+            ).first()
+            if forbidden:
+                raise HTTPException(status_code=403, detail="A recorrência inclui locais não permitidos")
+
     result = appointment_service.cancel_appointment(db, appointment_id, account.user.id, cancel_all_future)
 
     if account.role == "staff":
@@ -232,6 +250,9 @@ def resolve_appointment(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para resolver agendamentos",
             )
+
+    appointment_service._lock_schedule(db, account.user.id)
+    get_appointment(appointment_id, db, account)
 
     result = appointment_service.resolve_appointment(
         db, appointment_id, account.user.id,
@@ -269,6 +290,9 @@ def complete_appointment(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Você não tem permissão para concluir agendamentos",
             )
+
+    appointment_service._lock_schedule(db, account.user.id)
+    get_appointment(appointment_id, db, account)
 
     result = appointment_service.complete_appointment(
         db, appointment_id, account.user.id,

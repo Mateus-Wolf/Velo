@@ -1,9 +1,8 @@
 import os
 import uuid
-import shutil
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -12,8 +11,10 @@ from app.models.medical_record import MedicalRecord
 from app.models.attachment import Attachment
 from app.models.consent_form import ConsentForm
 from app.models.client import Client
+from app.models.appointment import Appointment
+from app.models.workplace_client import WorkplaceClient
 from app.schemas.medical_record import (
-    MedicalRecordCreate, MedicalRecordResponse, MedicalRecordUpdate,
+    MedicalRecordCreate, MedicalRecordResponse,
     ConsentFormCreate, ConsentFormResponse, AttachmentUpdate
 )
 from app.services.security import encrypt_data, decrypt_data, decrypt_bytes
@@ -23,44 +24,76 @@ router = APIRouter(prefix="/medical-records", tags=["Prontuários"])
 MEDICAL_FILES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "medical_records")
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".pdf"}
 
+def require_clinical_access(account: CurrentAccount = Depends(get_current_account)):
+    if account.role == "staff" and not account.permissions.get("can_access_documents"):
+        raise HTTPException(status_code=403, detail="Você não tem permissão para acessar documentos de pacientes")
+    return account
+
+
 def check_client_access(db: Session, client_id: int, account: CurrentAccount):
+    require_clinical_access(account)
     user_id = account.user.id
-    if account.role == "staff":
-        if not account.permissions.get("can_access_documents"):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail="Você não tem permissão para acessar documentos de pacientes"
-            )
-    
     client = db.query(Client).filter(Client.id == client_id, Client.user_id == user_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    if account.role == "staff":
+        allowed_ids = account.permissions.get("allowed_workplace_ids", [])
+        link = db.query(WorkplaceClient).filter(
+            WorkplaceClient.client_id == client_id,
+            WorkplaceClient.workplace_id.in_(allowed_ids),
+        ).first()
+        if not link:
+            raise HTTPException(status_code=403, detail="Cliente fora dos locais permitidos")
     return client
+
+
+def check_record_access(db: Session, client_id: int, appointment_id: Optional[int], account: CurrentAccount):
+    check_client_access(db, client_id, account)
+    if appointment_id is not None:
+        appointment = db.query(Appointment).filter(
+            Appointment.id == appointment_id,
+            Appointment.client_id == client_id,
+            Appointment.user_id == account.user.id,
+        ).first()
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Agendamento não encontrado para este cliente")
+        if account.role == "staff" and appointment.workplace_id not in account.permissions.get("allowed_workplace_ids", []):
+            raise HTTPException(status_code=403, detail="Documento de local não permitido")
+
 
 def decrypt_record(record: MedicalRecord):
     """Auxiliar para descriptografar o conteúdo de um registro antes de enviar para o cliente."""
-    if record.content:
-        try:
-            record.content = decrypt_data(record.content.encode() if isinstance(record.content, str) else record.content)
-        except Exception:
-            pass # Caso já esteja descriptografado ou erro na chave
-    return record
+    response = MedicalRecordResponse.model_validate(record)
+    response.content = decrypt_data(record.content.encode())
+    return response
 
 @router.get("/check-clinical-data")
 def check_clinical_data_status(
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Verifica se o usuário possui qualquer dado clínico (prontuário ou anexo) cadastrado."""
     # Busca IDs de clientes do usuário
     client_ids = db.query(Client.id).filter(Client.user_id == account.user.id).all()
     client_ids = [c[0] for c in client_ids]
+    if account.role == "staff":
+        client_ids = [c[0] for c in db.query(WorkplaceClient.client_id).filter(
+            WorkplaceClient.client_id.in_(client_ids),
+            WorkplaceClient.workplace_id.in_(account.permissions.get("allowed_workplace_ids", [])),
+        ).all()]
     
     if not client_ids:
         return {"has_clinical_data": False}
         
     # Verifica se existe algum registro médico para esses clientes
-    has_records = db.query(MedicalRecord).filter(MedicalRecord.client_id.in_(client_ids)).first() is not None
+    records = db.query(MedicalRecord).filter(MedicalRecord.client_id.in_(client_ids))
+    if account.role == "staff":
+        permitted_appointments = db.query(Appointment.id).filter(
+            Appointment.user_id == account.user.id,
+            Appointment.workplace_id.in_(account.permissions.get("allowed_workplace_ids", [])),
+        )
+        records = records.filter(or_(MedicalRecord.appointment_id.is_(None), MedicalRecord.appointment_id.in_(permitted_appointments)))
+    has_records = records.first() is not None
     
     return {"has_clinical_data": has_records}
 
@@ -68,21 +101,27 @@ def check_clinical_data_status(
 def get_client_records(
     client_id: int,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Lista todos os registros (anamnese e evoluções) de um cliente com conteúdo descriptografado."""
     check_client_access(db, client_id, account)
     records = db.query(MedicalRecord).filter(MedicalRecord.client_id == client_id).order_by(MedicalRecord.created_at.desc()).all()
+    if account.role == "staff":
+        allowed_ids = account.permissions.get("allowed_workplace_ids", [])
+        records = [r for r in records if r.appointment_id is None or (
+            r.appointment and r.appointment.user_id == account.user.id
+            and r.appointment.workplace_id in allowed_ids
+        )]
     return [decrypt_record(r) for r in records]
 
 @router.post("/", response_model=MedicalRecordResponse)
 def create_medical_record(
     data: MedicalRecordCreate,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Cria um novo registro (Anamnese ou Evolução) com conteúdo criptografado."""
-    check_client_access(db, data.client_id, account)
+    check_record_access(db, data.client_id, data.appointment_id, account)
     
     # Criptografar conteúdo
     encrypted_content = encrypt_data(data.content).decode()
@@ -93,6 +132,7 @@ def create_medical_record(
             MedicalRecord.type == "anamnesis"
         ).first()
         if existing:
+            check_record_access(db, existing.client_id, existing.appointment_id, account)
             existing.content = encrypted_content
             db.commit()
             db.refresh(existing)
@@ -113,7 +153,7 @@ def create_medical_record(
 def delete_medical_record(
     record_id: int,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Exclui um registro médico e seus anexos físicos."""
     record = db.query(MedicalRecord).join(Client).filter(
@@ -123,6 +163,8 @@ def delete_medical_record(
     
     if not record:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
+
+    check_record_access(db, record.client_id, record.appointment_id, account)
 
     # Deletar arquivos físicos dos anexos
     for att in record.attachments:
@@ -140,7 +182,7 @@ def upload_attachment(
     label: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Upload de anexo criptografado."""
     record = db.query(MedicalRecord).join(Client).filter(
@@ -150,6 +192,8 @@ def upload_attachment(
     
     if not record:
         raise HTTPException(status_code=404, detail="Registro não encontrado")
+
+    check_record_access(db, record.client_id, record.appointment_id, account)
 
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -182,7 +226,7 @@ def update_attachment(
     attachment_id: int,
     data: AttachmentUpdate,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Atualiza o rótulo de um anexo."""
     attachment = db.query(Attachment).join(MedicalRecord).join(Client).filter(
@@ -192,6 +236,8 @@ def update_attachment(
     
     if not attachment:
         raise HTTPException(status_code=404, detail="Anexo não encontrado")
+
+    check_record_access(db, attachment.medical_record.client_id, attachment.medical_record.appointment_id, account)
 
     if data.label:
         attachment.label = data.label
@@ -204,7 +250,7 @@ def update_attachment(
 def delete_attachment(
     attachment_id: int,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Exclui um anexo físico e seu registro no banco."""
     attachment = db.query(Attachment).join(MedicalRecord).join(Client).filter(
@@ -214,6 +260,8 @@ def delete_attachment(
     
     if not attachment:
         raise HTTPException(status_code=404, detail="Anexo não encontrado")
+
+    check_record_access(db, attachment.medical_record.client_id, attachment.medical_record.appointment_id, account)
 
     actual_path = os.path.join(MEDICAL_FILES_DIR, os.path.basename(attachment.file_path))
     if os.path.exists(actual_path):
@@ -229,7 +277,7 @@ def delete_attachment(
 def get_decrypted_file(
     attachment_id: int,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Retorna o arquivo descriptografado para visualização/download."""
     attachment = db.query(Attachment).join(MedicalRecord).join(Client).filter(
@@ -239,6 +287,8 @@ def get_decrypted_file(
     
     if not attachment:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+
+    check_record_access(db, attachment.medical_record.client_id, attachment.medical_record.appointment_id, account)
 
     actual_path = os.path.join(MEDICAL_FILES_DIR, os.path.basename(attachment.file_path))
     if not os.path.exists(actual_path):
@@ -257,10 +307,10 @@ def get_decrypted_file(
 def create_consent_form(
     data: ConsentFormCreate,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Cria um termo de consentimento com conteúdo criptografado."""
-    check_client_access(db, data.client_id, account)
+    check_record_access(db, data.client_id, data.appointment_id, account)
     
     # Criptografar conteúdo do termo
     new_form = ConsentForm(
@@ -273,15 +323,16 @@ def create_consent_form(
     db.commit()
     db.refresh(new_form)
     # Descriptografar para retorno
-    new_form.content = decrypt_data(new_form.content.encode())
-    return new_form
+    result = ConsentFormResponse.model_validate(new_form)
+    result.content = decrypt_data(new_form.content.encode())
+    return result
 
 @router.put("/consent/{form_id}/sign", response_model=ConsentFormResponse)
 def sign_consent_form(
     form_id: int,
     signature_data: str,
     db: Session = Depends(get_db),
-    account: CurrentAccount = Depends(get_current_account)
+    account: CurrentAccount = Depends(require_clinical_access)
 ):
     """Salva a assinatura criptografada."""
     form = db.query(ConsentForm).join(Client).filter(
@@ -292,11 +343,14 @@ def sign_consent_form(
     if not form:
         raise HTTPException(status_code=404, detail="Termo não encontrado")
 
+    check_record_access(db, form.client_id, form.appointment_id, account)
+
     form.signature_data = encrypt_data(signature_data).decode()
     form.signed_at = __import__("datetime").datetime.now()
     db.commit()
     db.refresh(form)
     
-    form.content = decrypt_data(form.content.encode())
-    form.signature_data = decrypt_data(form.signature_data.encode())
-    return form
+    result = ConsentFormResponse.model_validate(form)
+    result.content = decrypt_data(form.content.encode())
+    result.signature_data = decrypt_data(form.signature_data.encode())
+    return result

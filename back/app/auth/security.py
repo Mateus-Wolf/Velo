@@ -38,10 +38,21 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def decode_access_token(token: str) -> Optional[dict]:
-    """Decodifica o JWT e retorna o payload. Retorna None se inválido."""
+def decode_access_token(token: str, expected_type: str = "access") -> Optional[dict]:
+    """Valida assinatura, expiração, identificação e finalidade do token."""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != expected_type or not payload.get("exp"):
+            return None
+        if not str(payload.get("sub", "")).isdigit() or int(payload["sub"]) <= 0:
+            return None
+        if payload.get("role", "admin") not in ("admin", "staff"):
+            return None
+        if payload.get("role") == "staff":
+            if any(not str(payload.get(key, "")).isdigit() for key in ("staff_id", "admin_id")):
+                return None
+            if str(payload["admin_id"]) != str(payload["sub"]):
+                return None
         return payload
     except JWTError:
         return None
@@ -58,10 +69,4 @@ def create_appointment_token(appointment_id: int, action: str, token_version: in
 
 def decode_appointment_token(token: str) -> Optional[dict]:
     """Decodifica o token de agendamento. Retorna payload se for válido."""
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("type") != "appointment":
-            return None
-        return payload
-    except JWTError:
-        return None
+    return decode_access_token(token, expected_type="appointment")

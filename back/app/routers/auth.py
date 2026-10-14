@@ -138,7 +138,7 @@ def login(
 @router.post("/refresh", response_model=Token)
 def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
     """Gera novos tokens a partir de um refresh_token válido."""
-    payload = decode_access_token(body.refresh_token)
+    payload = decode_access_token(body.refresh_token, expected_type="refresh")
     if payload is None or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -313,7 +313,7 @@ def verify_code(data: VerifyCodeRequest, db: Session = Depends(get_db)):
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     """Redefine a senha usando o token temporário gerado na verificação do código."""
 
-    payload = decode_access_token(data.reset_token)
+    payload = decode_access_token(data.reset_token, expected_type="reset")
     if payload is None or payload.get("type") != "reset":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -347,7 +347,7 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
 @router.post("/2fa/verify-login")
 def verify_login_2fa(data: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
     """Valida o código de 2FA enviado no login e retorna os tokens definitivos."""
-    payload = decode_access_token(data.temp_token)
+    payload = decode_access_token(data.temp_token, expected_type="2fa_login")
     if payload is None or payload.get("type") != "2fa_login":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

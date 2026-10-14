@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.config import settings
+from app.services.security import get_cipher
 from app.database import engine, Base
 from app.models import *  # noqa: F401,F403 — registra todos os models na Base
 
@@ -21,6 +22,7 @@ logger = logging.getLogger("mindflow")
 from app.services.holiday_service import prefetch_current_year_holidays
 
 # Cria as tabelas no banco (somente se não existirem)
+get_cipher()  # Validar a chave clínica antes de acessar o banco.
 Base.metadata.create_all(bind=engine)
 
 # Scheduler de notificações e tarefas periódicas
@@ -99,7 +101,7 @@ import os
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(os.path.join(static_dir, "avatars"), exist_ok=True)
 os.makedirs(os.path.join(static_dir, "medical_records"), exist_ok=True)
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/static/avatars", StaticFiles(directory=os.path.join(static_dir, "avatars")), name="avatars")
 
 
 @app.get("/")

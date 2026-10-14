@@ -68,6 +68,7 @@
         "back_to_login": "Volver al inicio de sesión"
     },
     "calendar": {
+        "creationSummary": {"title": "Resultado de las citas", "counts": "{{created}} creadas · {{skipped}} no creadas", "created": "Fechas creadas", "skipped": "Fechas no creadas y motivos", "close": "Cerrar"},
         "modals": {
             "cancel": {
                 "cancelThis": "Cancelar sólo esta cita",

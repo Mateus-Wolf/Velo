@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.appointment import Appointment
 from app.models.review import Review
+from app.services.appointment_service import _lock_schedule, _invalidate_links
 from app.auth.security import decode_appointment_token
 from app.schemas.appointment import ReviewCreate, ReviewResponse
 
@@ -22,6 +23,9 @@ def confirm_appointment(token: str, db: Session = Depends(get_db)):
     if not appointment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado.")
     
+    _lock_schedule(db, appointment.user_id)
+    db.refresh(appointment)
+
     # Validar versão do token (invalidar links antigos quando preço muda)
     token_version = payload.get("tv", 1)
     if token_version != appointment.confirmation_token_version:
@@ -30,8 +34,8 @@ def confirm_appointment(token: str, db: Session = Depends(get_db)):
             detail="Este link não é mais válido. Um email mais recente foi enviado com as informações atualizadas.",
         )
     
-    if appointment.status in ("canceled_client", "canceled_user"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Agendamento já foi cancelado.")
+    if appointment.status not in ("scheduled", "confirmed"):
+        raise HTTPException(status_code=400, detail="Este agendamento não pode mais ser confirmado.")
         
     appointment.status = "confirmed"
     appointment.rescheduled = False  # Resetar flag ao confirmar
@@ -53,6 +57,9 @@ def cancel_appointment(token: str, db: Session = Depends(get_db)):
     if not appointment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado.")
     
+    _lock_schedule(db, appointment.user_id)
+    db.refresh(appointment)
+
     # Validar versão do token (invalidar links antigos quando preço muda)
     token_version = payload.get("tv", 1)
     if token_version != appointment.confirmation_token_version:
@@ -61,6 +68,9 @@ def cancel_appointment(token: str, db: Session = Depends(get_db)):
             detail="Este link não é mais válido. Um email mais recente foi enviado com as informações atualizadas.",
         )
         
+    if appointment.status not in ("scheduled", "confirmed"):
+        raise HTTPException(status_code=400, detail="Este agendamento não pode mais ser cancelado.")
+    _invalidate_links(appointment)
     appointment.status = "canceled_client"
     db.commit()
     

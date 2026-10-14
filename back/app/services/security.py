@@ -1,26 +1,30 @@
-import os
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, MultiFernet
 from typing import Union
 
-# A chave deve ser carregada de uma variável de ambiente em produção.
-# Se não existir, geramos uma estável para desenvolvimento (baseada no SECRET_KEY ou fixa).
-ENCRYPTION_KEY = os.getenv("MEDICAL_ENCRYPTION_KEY")
-if not ENCRYPTION_KEY:
-    # Apenas para desenvolvimento. Em produção, DEVE ser definida.
-    ENCRYPTION_KEY = b'REDACTED_KEY_REMOVED_FOR_SECURITY' # Chave base64 válida
+from app.config import settings
 
-cipher_suite = Fernet(ENCRYPTION_KEY)
+
+def get_cipher() -> MultiFernet:
+    """Grava com a chave atual e lê chaves anteriores explicitamente configuradas."""
+    if not settings.MEDICAL_ENCRYPTION_KEY.strip():
+        raise RuntimeError("Configure MEDICAL_ENCRYPTION_KEY. Consulte docs/security-upgrade.md.")
+    keys = [settings.MEDICAL_ENCRYPTION_KEY.strip()]
+    keys.extend(key.strip() for key in settings.MEDICAL_PREVIOUS_ENCRYPTION_KEYS.split(",") if key.strip())
+    try:
+        return MultiFernet([Fernet(key.encode()) for key in keys])
+    except (ValueError, TypeError) as exc:
+        raise RuntimeError("Chave de criptografia clínica inválida.") from exc
 
 def encrypt_data(data: Union[str, bytes]) -> bytes:
     """Criptografa texto ou bytes."""
     if isinstance(data, str):
         data = data.encode()
-    return cipher_suite.encrypt(data)
+    return get_cipher().encrypt(data)
 
 def decrypt_data(encrypted_data: bytes) -> str:
     """Descriptografa para string."""
-    return cipher_suite.decrypt(encrypted_data).decode()
+    return get_cipher().decrypt(encrypted_data).decode()
 
 def decrypt_bytes(encrypted_data: bytes) -> bytes:
     """Descriptografa para bytes brutos."""
-    return cipher_suite.decrypt(encrypted_data)
+    return get_cipher().decrypt(encrypted_data)

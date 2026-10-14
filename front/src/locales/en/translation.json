@@ -68,6 +68,7 @@
         "back_to_login": "Back to login"
     },
     "calendar": {
+        "creationSummary": {"title": "Appointment results", "counts": "{{created}} created · {{skipped}} not created", "created": "Created dates", "skipped": "Dates not created and reasons", "close": "Close"},
         "modals": {
             "cancel": {
                 "cancelThis": "Cancel only this appointment",

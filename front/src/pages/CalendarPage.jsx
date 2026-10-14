@@ -1,3 +1,4 @@
+import AppointmentCreationSummary from '../components/AppointmentCreationSummary';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -564,7 +565,7 @@ function EditAppointmentModal({ isOpen, onClose, onUpdated, appointment, workpla
 /* ------------------------------------------------------------------ */
 /*  Create Appointment Modal                                           */
 /* ------------------------------------------------------------------ */
-function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, selectedDate, setToast }) {
+function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, selectedDate, setToast, onSummary }) {
     const { t } = useTranslation();
     const { user } = useAuthStore();
     const [form, setForm] = useState({ workplace_id: '', client_id: '', date: '', start_time: '09:00', end_time: '10:00', price: '' });
@@ -645,11 +646,13 @@ function CreateAppointmentModal({ isOpen, onClose, onCreated, workplaces, select
                 recurrence_type: isRecurring ? recurrenceType : null,
                 recurrence_value: isRecurring ? recurrenceValue : null,
             };
-            const { data } = await api.post('/appointments/', payload);
-            onCreated(data);
+            const { data } = await api.post('/appointments/?include_summary=true', payload);
+            onCreated(data.appointments);
+            if (isRecurring) onSummary(data);
             onClose();
         } catch (err) {
-            const errorMsg = err.response?.data?.detail || t('calendar.modals.create.errorCreate', 'Erro ao criar agendamento.');
+            const detail = err.response?.data?.detail;
+            const errorMsg = Array.isArray(detail) ? detail.map(item => item.msg).join('; ') : detail || t('calendar.modals.create.errorCreate', 'Erro ao criar agendamento.');
             if (setToast) {
                 setToast({ type: 'error', message: errorMsg });
                 setTimeout(() => setToast(null), 4000);
@@ -939,6 +942,7 @@ export default function CalendarPage() {
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(null);
     const [createOpen, setCreateOpen] = useState(false);
+    const [creationSummary, setCreationSummary] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
     const [canceling, setCanceling] = useState(false);
@@ -1629,7 +1633,9 @@ export default function CalendarPage() {
             </motion.button>
 
             {/* Modals */}
+            <AppointmentCreationSummary result={creationSummary} onClose={() => setCreationSummary(null)} />
             <CreateAppointmentModal
+                onSummary={setCreationSummary}
                 isOpen={createOpen}
                 onClose={() => setCreateOpen(false)}
                 onCreated={handleCreated}

@@ -101,6 +101,27 @@ PROJET-WEB-SITE-VELO/
 
 ## 🚀 Como Executar Localmente
 
+### Windows: instalar e iniciar com dois prompts
+
+Na raiz do projeto, dê dois cliques em `iniciar_velo.bat`.
+Ele instala as dependências em `back/.venv` e `front/node_modules`, verifica
+a conexão com o banco e abre uma janela para cada servidor.
+
+Instale antes **Python 3.12**, **Node.js LTS (20.19+ ou 22.12+)** e tenha
+um **PostgreSQL acessível, com o banco criado**. Na primeira execução, o script
+abre `back/.env` no Bloco de Notas: preencha `DATABASE_URL`, salve e feche.
+Se o banco já contém prontuários, informe a chave clínica original. Uma chave
+nova só é gerada automaticamente quando não existem dados clínicos no banco.
+As credenciais de e-mail, Gemini e Firebase podem ser configuradas depois.
+
+Acesse `http://localhost:5173` após as janelas indicarem que os servidores
+iniciaram. Para parar, pressione `Ctrl+C` nas duas janelas.
+Para conferir apenas Python e Node, execute `iniciar_velo.bat --check`.
+Para instalar sem iniciar, execute `iniciar_velo.bat --install-only`.
+
+O script preserva arquivos `.env` existentes. Ao transferir um projeto de outro
+computador, recrie o ambiente virtual; não copie a pasta `.venv`.
+
 ### Pré-requisitos
 
 - Python 3.11+

@@ -2,10 +2,14 @@ from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from fastapi import HTTPException, status, BackgroundTasks
 
 from app.models.appointment import Appointment
 from app.models.workplace import Workplace
+from app.models.client import Client
+from app.models.workplace_client import WorkplaceClient
+from app.models.user import User
 from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, VALID_PAYMENT_METHODS
 from app.config import settings
 from app.services.email_service import send_email
@@ -26,113 +30,78 @@ from datetime import timedelta
 INACTIVE_STATUSES = ["canceled_client", "canceled_user", "no_show", "completed"]
 
 
+def _validate_resources(db: Session, user_id: int, data: Dict) -> Workplace:
+    workplace = db.query(Workplace).filter(
+        Workplace.id == data.get("workplace_id"), Workplace.user_id == user_id,
+        Workplace.is_active == True,
+    ).first()
+    if not workplace:
+        raise HTTPException(status_code=404, detail="Local não encontrado")
+    client = db.query(Client).filter(
+        Client.id == data.get("client_id"), Client.user_id == user_id, Client.is_active == True,
+    ).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    if not db.query(WorkplaceClient).filter(
+        WorkplaceClient.workplace_id == workplace.id, WorkplaceClient.client_id == client.id,
+    ).first():
+        raise HTTPException(status_code=400, detail="Cliente não vinculado ao local selecionado")
+    return workplace
+
+
+def _lock_schedule(db: Session, user_id: int):
+    # Serializa alterações da agenda do profissional no PostgreSQL.
+    db.query(User.id).filter(User.id == user_id).with_for_update().first()
+
+
+def _invalidate_links(appointment: Appointment):
+    appointment.confirmation_token_version = (appointment.confirmation_token_version or 1) + 1
+
+
 def _validate_appointment(db: Session, user_id: int, data: Dict, exclude_id: Optional[int] = None) -> None:
-    """Valida regras de negócio do agendamento."""
-    # 1. Não permitir agendar no passado (compara em hora local)
-    appt_date = data.get("date")
-    appt_start = data.get("start_time")
-    if appt_date and appt_start:
-        appt_datetime = datetime.combine(appt_date, appt_start)
-        if appt_datetime < datetime.now():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não é permitido agendar no passado",
-            )
+    workplace = _validate_resources(db, user_id, data)
+    appt_date, start_time, end_time = data["date"], data["start_time"], data["end_time"]
+    if not appt_date or not start_time or not end_time or end_time <= start_time:
+        raise HTTPException(status_code=400, detail="O horário final deve ser posterior ao inicial")
+    start_dt = datetime.combine(appt_date, start_time)
+    end_dt = datetime.combine(appt_date, end_time)
+    if start_dt < datetime.now():
+        raise HTTPException(status_code=400, detail="Não é permitido agendar no passado")
+    if start_time < workplace.start_time or end_time > workplace.end_time:
+        raise HTTPException(status_code=400, detail="Horário fora do expediente do local")
+    if workplace.break_start_time and workplace.break_end_time:
+        if max(start_time, workplace.break_start_time) < min(end_time, workplace.break_end_time):
+            raise HTTPException(status_code=400, detail="Horário coincide com o intervalo do local")
+    allowed_days = {int(d.strip()) % 7 for d in workplace.work_days.split(",")}
+    if appt_date.isoweekday() % 7 not in allowed_days:
+        raise HTTPException(status_code=400, detail="O local não funciona neste dia da semana")
+    if not workplace.works_on_holidays and is_holiday(appt_date):
+        raise HTTPException(status_code=400, detail="O local selecionado não possui expediente em feriados.")
 
-    # 2. Verificar horário dentro do expediente do local
-    workplace_id = data.get("workplace_id")
-    if workplace_id:
-        workplace = db.query(Workplace).filter(Workplace.id == workplace_id).first()
-        if not workplace:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Local não encontrado")
+    # Compara datetimes completos para preservar intervalos que atravessam meia-noite.
+    # A sobreposição é sempre proibida, mesmo com buffer zero e em locais diferentes.
+    max_buffer = db.query(func.max(Workplace.buffer_time)).filter(Workplace.user_id == user_id).scalar() or 0
+    margin = timedelta(minutes=max(0, max_buffer, workplace.buffer_time or 0))
+    query = db.query(Appointment).populate_existing().options(joinedload(Appointment.workplace)).filter(
+        Appointment.user_id == user_id, ~Appointment.status.in_(INACTIVE_STATUSES),
+        Appointment.date >= (start_dt - margin).date(),
+        Appointment.date <= (end_dt + margin).date(),
+    )
+    if exclude_id:
+        query = query.filter(Appointment.id != exclude_id)
+    for other in query.all():
+        buffer = timedelta(minutes=max(workplace.buffer_time or 0, other.workplace.buffer_time or 0))
+        other_start = datetime.combine(other.date, other.start_time)
+        other_end = datetime.combine(other.date, other.end_time)
+        if start_dt < other_end + buffer and end_dt + buffer > other_start:
+            raise HTTPException(status_code=409, detail="Conflito de horário na agenda (inclui o intervalo entre atendimentos e locais)")
 
-        start_time = data.get("start_time")
-        end_time = data.get("end_time")
-        if start_time and end_time:
-            if start_time < workplace.start_time or end_time > workplace.end_time:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Horário fora do expediente do local",
-                )
-            
-            if workplace.break_start_time and workplace.break_end_time:
-                if max(start_time, workplace.break_start_time) < min(end_time, workplace.break_end_time):
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Horário coincide com o intervalo do local",
-                    )
 
-        # 3. Verificar dia da semana
-        if appt_date:
-            day_of_week = appt_date.isoweekday()  # 1=seg, 7=dom
-            allowed_days = [int(d.strip()) for d in workplace.work_days.split(",")]
-            if day_of_week not in allowed_days:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="O local não funciona neste dia da semana",
-                )
-                
-        # 3.5. Verificar Feriados
-        if appt_date:
-            if not workplace.works_on_holidays and is_holiday(appt_date):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="O local selecionado não possui expediente em feriados.",
-                )
-
-    # 4. Verificar conflito de horário no mesmo local (com buffer time)
-    if workplace_id and appt_date and start_time and end_time:
-        buffer_minutes = workplace.buffer_time if workplace and workplace.buffer_time else 0
-        buffer = timedelta(minutes=buffer_minutes)
-
-        # Converter times para datetime para aritmética com buffer
-        ref_date = appt_date
-        start_dt = datetime.combine(ref_date, start_time)
-        end_dt = datetime.combine(ref_date, end_time)
-        buffered_start = (start_dt - buffer).time()
-        buffered_end = (end_dt + buffer).time()
-
-        conflict_query = db.query(Appointment).filter(
-            Appointment.workplace_id == workplace_id,
-            Appointment.date == appt_date,
-            ~Appointment.status.in_(INACTIVE_STATUSES),
-            Appointment.start_time < buffered_end,
-            Appointment.end_time > buffered_start,
-        )
-        if exclude_id:
-            conflict_query = conflict_query.filter(Appointment.id != exclude_id)
-
-        if conflict_query.first():
-            if buffer_minutes > 0:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Conflito de horário neste local (inclui intervalo de {buffer_minutes} min entre consultas)",
-                )
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Conflito de horário neste local",
-            )
-
-        # 5. Verificar conflito cross-workplace (buffer de deslocamento do local original)
-        from app.models.user import User
-        user = db.query(User).filter(User.id == user_id).first()
-        if user and user.multiple_workplaces and buffer_minutes > 0:
-            cross_conflict = db.query(Appointment).filter(
-                Appointment.user_id == user_id,
-                Appointment.workplace_id != workplace_id,
-                Appointment.date == appt_date,
-                ~Appointment.status.in_(INACTIVE_STATUSES),
-                Appointment.start_time < buffered_end,
-                Appointment.end_time > buffered_start,
-            )
-            if exclude_id:
-                cross_conflict = cross_conflict.filter(Appointment.id != exclude_id)
-
-            if cross_conflict.first():
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Conflito com agendamento em outro local (intervalo de {buffer_minutes} min para deslocamento)",
-                )
+class AppointmentCreationResult(list):
+    """Mantém compatibilidade com consumidores da lista e expõe recusas da recorrência."""
+    def __init__(self, appointments=(), skipped=()):
+        super().__init__(appointments)
+        self.skipped = list(skipped)
 
 
 def _auto_mark_pending(db: Session, user_id: int) -> None:
@@ -206,7 +175,7 @@ def count_pending(db: Session, user_id: int) -> int:
 
 def get_appointment(db: Session, appointment_id: int, user_id: int) -> Appointment:
     """Busca um agendamento pelo ID."""
-    appointment = db.query(Appointment).filter(
+    appointment = db.query(Appointment).populate_existing().filter(
         Appointment.id == appointment_id,
         Appointment.user_id == user_id,
     ).first()
@@ -216,13 +185,17 @@ def get_appointment(db: Session, appointment_id: int, user_id: int) -> Appointme
 
 
 def generate_recurrence_dates(start_date: date, limit_days: int, r_type: str, r_value: int) -> List[date]:
+    if r_type not in ("weekly", "biweekly", "triweekly", "monthly"):
+        raise HTTPException(status_code=400, detail="Frequência de recorrência inválida")
+    if not (1 <= r_value <= 31 if r_type == "monthly" else 0 <= r_value <= 7):
+        raise HTTPException(status_code=400, detail="Dia de recorrência inválido")
     dates = []
     current = start_date
     end_date = start_date + timedelta(days=limit_days)
     
     if r_type in ['weekly', 'biweekly', 'triweekly']:
         step = {'weekly': 7, 'biweekly': 14, 'triweekly': 21}[r_type]
-        target_weekday = r_value
+        target_weekday = r_value or 7
         while current.isoweekday() != target_weekday:
             current += timedelta(days=1)
         while current <= end_date:
@@ -254,6 +227,8 @@ def _format_price(price) -> str:
 def create_appointment(db: Session, user_id: int, data: AppointmentCreate, background_tasks: Optional[BackgroundTasks] = None) -> List[Appointment]:
     """Cria um novo agendamento (ou múltiplos se recorrente)."""
     
+    _lock_schedule(db, user_id)
+    _validate_resources(db, user_id, data.model_dump())
     if not getattr(data, "is_recurring", False):
         _validate_appointment(db, user_id, data.model_dump())
         appointment = Appointment(user_id=user_id, **data.model_dump(exclude={"is_recurring", "recurrence_type", "recurrence_value"}))
@@ -280,7 +255,7 @@ def create_appointment(db: Session, user_id: int, data: AppointmentCreate, backg
             )
             background_tasks.add_task(send_email, appointment.client.email, "Confirmação de Agendamento", html_body)
 
-        return [appointment]
+        return AppointmentCreationResult([appointment])
         
     # Lógica para recorrência
     dates_to_create = generate_recurrence_dates(
@@ -291,6 +266,7 @@ def create_appointment(db: Session, user_id: int, data: AppointmentCreate, backg
         raise HTTPException(status_code=400, detail="Nenhuma data válida encontrada para esta regra de recorrência.")
         
     created_appointments = []
+    skipped = []
     rec_id = str(uuid.uuid4())
     
     for dt in dates_to_create:
@@ -300,10 +276,12 @@ def create_appointment(db: Session, user_id: int, data: AppointmentCreate, backg
             _validate_appointment(db, user_id, appt_data)
             appt = Appointment(user_id=user_id, recurrence_id=rec_id, **appt_data)
             db.add(appt)
+            db.flush()
             created_appointments.append(appt)
-        except HTTPException:
-            # Ignora dias com conflitos ou fora de expediente
-            continue
+        except HTTPException as exc:
+            if exc.status_code not in (400, 409):
+                raise
+            skipped.append({"date": dt, "reason": exc.detail})
             
     db.commit()
     for appt in created_appointments:
@@ -321,15 +299,20 @@ def create_appointment(db: Session, user_id: int, data: AppointmentCreate, backg
         )
         background_tasks.add_task(send_email, first_appt.client.email, "Seu Pacote de Agendamentos", html_body)
         
-    return created_appointments
+    return AppointmentCreationResult(created_appointments, skipped)
 
 
 def update_appointment(
     db: Session, appointment_id: int, user_id: int, data: AppointmentUpdate, background_tasks: Optional[BackgroundTasks] = None
 ) -> Appointment:
     """Atualiza um agendamento existente."""
+    _lock_schedule(db, user_id)
     appointment = get_appointment(db, appointment_id, user_id)
+    if appointment.status in INACTIVE_STATUSES:
+        raise HTTPException(status_code=400, detail="Este agendamento já foi finalizado.")
     update_data = data.model_dump(exclude_unset=True)
+    if update_data.get("status") not in (None, appointment.status, "scheduled", "confirmed"):
+        raise HTTPException(status_code=400, detail="Use a operação de conclusão, resolução ou cancelamento para finalizar o atendimento")
 
     # Bloquear alteração de preço após confirmação do cliente
     if "price" in update_data and appointment.status == "confirmed":
@@ -344,6 +327,7 @@ def update_appointment(
 
     # Mescla dados existentes com atualizações para validação completa
     validation_data = {
+        "client_id": update_data.get("client_id", appointment.client_id),
         "workplace_id": update_data.get("workplace_id", appointment.workplace_id),
         "date": update_data.get("date", appointment.date),
         "start_time": update_data.get("start_time", appointment.start_time),
@@ -352,12 +336,10 @@ def update_appointment(
     _validate_appointment(db, user_id, validation_data, exclude_id=appointment_id)
 
     # Detectar mudanças de data/hora → setar flag rescheduled
-    is_rescheduled = False
-    new_date = update_data.get("date")
-    new_time = update_data.get("start_time")
-    if (new_date and new_date != old_date) or (new_time and new_time != old_time):
+    is_rescheduled = any(key in update_data and update_data[key] != getattr(appointment, key)
+                         for key in ("date", "start_time", "end_time", "workplace_id", "client_id"))
+    if is_rescheduled:
         update_data["rescheduled"] = True
-        is_rescheduled = True
 
     # Detectar mudança de preço
     new_price = update_data.get("price")
@@ -366,9 +348,9 @@ def update_appointment(
         if old_price != new_price:
             price_changed = True
 
-    # Se o preço mudou, incrementar versão do token (invalida links antigos)
-    if price_changed:
-        appointment.confirmation_token_version = (appointment.confirmation_token_version or 1) + 1
+    # Links anteriores não podem confirmar dados que o cliente ainda não viu.
+    if price_changed or is_rescheduled:
+        _invalidate_links(appointment)
 
     for key, value in update_data.items():
         setattr(appointment, key, value)
@@ -424,7 +406,11 @@ def update_appointment(
 
 def cancel_appointment(db: Session, appointment_id: int, user_id: int, cancel_all_future: bool = False) -> Appointment:
     """Cancela um agendamento (pelo painel do usuário) e opcionalmente seus futuros recorrentes."""
+    _lock_schedule(db, user_id)
     appointment = get_appointment(db, appointment_id, user_id)
+    if appointment.status in INACTIVE_STATUSES:
+        raise HTTPException(status_code=400, detail="Este agendamento já foi finalizado.")
+    _invalidate_links(appointment)
     appointment.status = "canceled_user"
     
     if cancel_all_future and appointment.recurrence_id:
@@ -435,6 +421,7 @@ def cancel_appointment(db: Session, appointment_id: int, user_id: int, cancel_al
             ~Appointment.status.in_(INACTIVE_STATUSES)
         ).all()
         for f_o in future_appointments:
+            _invalidate_links(f_o)
             f_o.status = "canceled_user"
             
     db.commit()
@@ -457,6 +444,7 @@ def resolve_appointment(
             detail=f"Status inválido. Valores permitidos: {', '.join(VALID_RESOLVE_STATUSES)}"
         )
     
+    _lock_schedule(db, user_id)
     appointment = get_appointment(db, appointment_id, user_id)
     
     if appointment.status != "pending":
@@ -465,6 +453,7 @@ def resolve_appointment(
             detail="Apenas agendamentos pendentes podem ser resolvidos."
         )
     
+    _invalidate_links(appointment)
     appointment.status = new_status
     
     # Salvar dados de pagamento quando concluído
@@ -521,6 +510,7 @@ def complete_appointment(
     background_tasks: Optional[BackgroundTasks] = None,
 ) -> Appointment:
     """Conclui um agendamento ativo (scheduled/confirmed) diretamente da agenda."""
+    _lock_schedule(db, user_id)
     appointment = get_appointment(db, appointment_id, user_id)
     
     if appointment.status in ["completed", "canceled_client", "canceled_user", "no_show"]:
@@ -529,6 +519,7 @@ def complete_appointment(
             detail="Este agendamento já foi finalizado."
         )
     
+    _invalidate_links(appointment)
     appointment.status = "completed"
     
     if payment_method:

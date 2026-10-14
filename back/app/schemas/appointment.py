@@ -17,6 +17,21 @@ class AppointmentCreate(BaseModel):
     recurrence_type: Optional[str] = None # 'weekly', 'biweekly', 'triweekly', 'monthly'
     recurrence_value: Optional[str] = None # Day of the week (0-6) or day of the month (1-31)
 
+    @model_validator(mode="after")
+    def validate_schedule(self):
+        if self.end_time <= self.start_time:
+            raise ValueError("O horário final deve ser posterior ao inicial")
+        if self.is_recurring:
+            if self.recurrence_type not in ("weekly", "biweekly", "triweekly", "monthly"):
+                raise ValueError("Frequência de recorrência inválida")
+            try:
+                day = int(self.recurrence_value)
+            except (TypeError, ValueError):
+                raise ValueError("Dia de recorrência inválido")
+            if not (1 <= day <= 31 if self.recurrence_type == "monthly" else 0 <= day <= 7):
+                raise ValueError("Dia de recorrência inválido")
+        return self
+
 class AppointmentUpdate(BaseModel):
     workplace_id: Optional[int] = None
     client_id: Optional[int] = None
@@ -25,6 +40,13 @@ class AppointmentUpdate(BaseModel):
     end_time: Optional[_dt.time] = None
     status: Optional[str] = None  # scheduled | confirmed | completed | pending | canceled_client | canceled_user | no_show
     price: Optional[float] = None
+
+    @model_validator(mode="after")
+    def reject_null_required_fields(self):
+        for name in ("workplace_id", "client_id", "date", "start_time", "end_time", "status"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} não pode ser nulo")
+        return self
 
 
 VALID_PAYMENT_METHODS = ["pix", "credit", "debit", "boleto", "cash", "free"]
@@ -94,3 +116,13 @@ class AppointmentResponse(BaseModel):
         if hasattr(data, "workplace") and data.workplace:
             data.workplace_name = data.workplace.name
         return data
+
+
+class SkippedAppointment(BaseModel):
+    date: _dt.date
+    reason: str
+
+
+class AppointmentCreationResponse(BaseModel):
+    appointments: list[AppointmentResponse]
+    skipped: list[SkippedAppointment]
