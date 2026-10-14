@@ -25,6 +25,8 @@ import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 import UserDropdown from '../components/UserDropdown';
 import { useTranslation } from 'react-i18next';
+import { useWorkplace, useWorkplaceClients, useWorkplaces } from '../services/queries';
+import { onClientCreated, onClientUpdated, onClientLinkChanged } from '../services/cache';
 
 /* ------------------------------------------------------------------ */
 /*  Confirm Delete Dialog                                              */
@@ -541,7 +543,11 @@ function EmptyClients({ onAdd }) {
 /* ------------------------------------------------------------------ */
 function CopyMoveModal({ isOpen, onClose, client, currentWorkplaceId, onDone }) {
     const { t } = useTranslation();
-    const [workplaces, setWorkplaces] = useState([]);
+    const { data: allWorkplaces = [] } = useWorkplaces();
+    const workplaces = useMemo(
+        () => allWorkplaces.filter((wp) => String(wp.id) !== String(currentWorkplaceId)),
+        [allWorkplaces, currentWorkplaceId]
+    );
     const [targetId, setTargetId] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -550,11 +556,8 @@ function CopyMoveModal({ isOpen, onClose, client, currentWorkplaceId, onDone }) 
         if (isOpen) {
             setTargetId('');
             setError('');
-            api.get('/workplaces/')
-                .then(({ data }) => setWorkplaces(data.filter((wp) => String(wp.id) !== String(currentWorkplaceId))))
-                .catch(() => setWorkplaces([]));
         }
-    }, [isOpen, currentWorkplaceId]);
+    }, [isOpen]);
 
     const handleAction = async (mode) => {
         if (!targetId) { setError(t('workplace.copyMove.errorTarget', 'Selecione um local de destino.')); return; }
@@ -567,7 +570,7 @@ function CopyMoveModal({ isOpen, onClose, client, currentWorkplaceId, onDone }) 
             if (mode === 'move') {
                 await api.delete(`/clients/${client.id}/link/${currentWorkplaceId}`);
             }
-            onDone(mode);
+            onDone(mode, targetId);
             onClose();
         } catch (err) {
             setError(err.response?.data?.detail || t('common.errorProcess', 'Erro ao processar.'));
@@ -701,11 +704,11 @@ export default function WorkplacePage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
 
-    const [workplace, setWorkplace] = useState(null);
-    const [clients, setClients] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: workplace, isError: workplaceError } = useWorkplace(workplaceId);
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const { data: clients = [], isLoading: loading } = useWorkplaceClients(workplaceId, debouncedSearch);
+
     const [filters, setFilters] = useState({ status: 'all' });
     const [filterOpen, setFilterOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
@@ -721,40 +724,19 @@ export default function WorkplacePage() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Fetch workplace info
+    // Redirect if workplace does not exist
     useEffect(() => {
-        api.get(`/workplaces/${workplaceId}`)
-            .then(({ data }) => setWorkplace(data))
-            .catch(() => navigate('/workplaces', { replace: true }));
-    }, [workplaceId, navigate]);
-
-    // Fetch clients
-    const fetchClients = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = {};
-            if (debouncedSearch) params.name = debouncedSearch;
-            const { data } = await api.get(`/workplaces/${workplaceId}/clients`, { params });
-            setClients(data);
-        } catch (err) {
-            console.error('Erro ao buscar clientes:', err);
-        } finally {
-            setLoading(false);
+        if (workplaceError) {
+            navigate('/workplaces', { replace: true });
         }
-    }, [workplaceId, debouncedSearch]);
-
-    useEffect(() => {
-        fetchClients();
-    }, [fetchClients]);
+    }, [workplaceError, navigate]);
 
     const handleCreated = (newClient) => {
-        setClients((prev) => [newClient, ...prev].sort((a, b) => a.name.localeCompare(b.name)));
+        onClientCreated(newClient, workplaceId);
     };
 
     const handleUpdated = (updatedClient) => {
-        setClients((prev) =>
-            prev.map((c) => (c.id === updatedClient.id ? updatedClient : c))
-        );
+        onClientUpdated(updatedClient);
     };
 
     const handleDelete = async () => {
@@ -762,7 +744,7 @@ export default function WorkplacePage() {
         setDeleting(true);
         try {
             await api.put(`/clients/${deleteTarget.id}`, { is_active: false });
-            setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+            onClientUpdated({ ...deleteTarget, is_active: false });
             setDeleteTarget(null);
         } catch (err) {
             console.error('Erro ao excluir cliente:', err);
@@ -1040,10 +1022,8 @@ export default function WorkplacePage() {
                 onClose={() => setCopyMoveTarget(null)}
                 client={copyMoveTarget}
                 currentWorkplaceId={workplaceId}
-                onDone={(mode) => {
-                    if (mode === 'move') {
-                        setClients((prev) => prev.filter((c) => c.id !== copyMoveTarget.id));
-                    }
+                onDone={(mode, targetId) => {
+                    onClientLinkChanged([workplaceId, targetId]);
                     setCopyMoveTarget(null);
                 }}
             />

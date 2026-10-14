@@ -152,6 +152,9 @@ const useAuthStore = create((set) => ({
     },
 
     logout: () => {
+        try {
+            import('../services/cache').then((m) => m.clearCache());
+        } catch { /* silent */ }
         localStorage.removeItem('velo_token');
         localStorage.removeItem('velo_refresh_token');
         localStorage.removeItem('velo_user');

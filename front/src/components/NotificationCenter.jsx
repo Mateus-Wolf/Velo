@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     HiOutlineBell,
@@ -10,10 +10,11 @@ import {
     HiOutlineCalendar,
 } from 'react-icons/hi';
 import api from '../services/api';
+import { queryClient } from '../services/queryClient';
+import { keys } from '../services/cache';
+import { useUnreadCount, useNotificationHistory } from '../services/queries';
 import useAuthStore from '../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
-
-const POLL_INTERVAL = 60_000;
 
 /* Mapeia tipo de notificação para label e cor */
 function getTypeInfo(type, t) {
@@ -46,41 +47,11 @@ export default function NotificationCenter() {
     const { user } = useAuthStore();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [loading, setLoading] = useState(false);
     const panelRef = useRef(null);
-    const intervalRef = useRef(null);
 
-    const fetchUnreadCount = useCallback(async () => {
-        if (!user) return;
-        try {
-            const { data } = await api.get('/notifications/unread-count');
-            setUnreadCount(data.count);
-        } catch { /* silent */ }
-    }, [user]);
-
-    const fetchHistory = useCallback(async () => {
-        if (!user) return;
-        setLoading(true);
-        try {
-            const { data } = await api.get('/notifications/history');
-            setNotifications(data);
-        } catch { /* silent */ }
-        finally { setLoading(false); }
-    }, [user]);
-
-    // Poll unread count
-    useEffect(() => {
-        fetchUnreadCount();
-        intervalRef.current = setInterval(fetchUnreadCount, POLL_INTERVAL);
-        return () => clearInterval(intervalRef.current);
-    }, [fetchUnreadCount]);
-
-    // Fetch history when panel opens
-    useEffect(() => {
-        if (isOpen) fetchHistory();
-    }, [isOpen, fetchHistory]);
+    // Contador (com polling compartilhado) e histórico (só quando o painel abre) vêm do cache.
+    const { data: unreadCount = 0 } = useUnreadCount(!!user);
+    const { data: notifications = [], isLoading: loading } = useNotificationHistory(!!user && isOpen);
 
     // Close on click outside
     useEffect(() => {
@@ -95,15 +66,17 @@ export default function NotificationCenter() {
 
     const handleMarkAllRead = async () => {
         try {
-            await api.patch('/notifications/read-all');
-            setUnreadCount(0);
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            await api.patch('/notifications/read-all', null, { silent: true });
+            queryClient.setQueryData(keys.notifications.unreadCount, 0);
+            queryClient.setQueryData(keys.notifications.history, (prev) =>
+                prev ? prev.map((n) => ({ ...n, is_read: true })) : prev);
         } catch { /* silent */ }
     };
 
     const togglePanel = () => setIsOpen(prev => !prev);
 
     const grouped = groupByDate(notifications, t);
+
 
     return (
         <div className="relative" ref={panelRef}>

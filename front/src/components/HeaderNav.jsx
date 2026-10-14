@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -12,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import UserDropdown from './UserDropdown';
 import NotificationCenter from './NotificationCenter';
 import useAuthStore from '../store/useAuthStore';
-import api from '../services/api';
+import { usePendingCount } from '../services/queries';
 
 const ALL_NAV_ITEMS = [
     { path: '/', icon: HiOutlineCalendar, labelKey: 'nav.agenda', fallback: 'Agenda', adminOnly: false },
@@ -27,7 +26,6 @@ export default function HeaderNav() {
     const location = useLocation();
     const { t } = useTranslation();
     const user = useAuthStore((s) => s.user);
-    const [pendingCount, setPendingCount] = useState(0);
 
     const isStaff = user?.role === 'staff';
 
@@ -36,16 +34,8 @@ export default function HeaderNav() {
         ? ALL_NAV_ITEMS.filter((item) => !item.adminOnly)
         : ALL_NAV_ITEMS;
 
-    useEffect(() => {
-        if (isStaff) return; // Staff doesn't see pending count
-        const fetchPending = async () => {
-            try {
-                const res = await api.get('/appointments/pending-count');
-                setPendingCount(res.data.count);
-            } catch { /* silently ignore */ }
-        };
-        fetchPending();
-    }, [isStaff]);
+    // Staff doesn't see pending count. O valor fica em cache compartilhado entre telas.
+    const { data: pendingCount = 0 } = usePendingCount(!isStaff);
 
     return (
         <nav className="sticky top-0 z-40 border-b border-white/5 bg-surface-950/70 backdrop-blur-xl">

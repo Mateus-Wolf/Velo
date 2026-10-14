@@ -50,5 +50,5 @@ class Appointment(Base):
     user = relationship("User", back_populates="appointments")
     workplace = relationship("Workplace", back_populates="appointments")
     client = relationship("Client", back_populates="appointments")
-    alerts = relationship("Alert", back_populates="appointment", lazy="selectin")
-    review = relationship("Review", back_populates="appointment", uselist=False, lazy="selectin")
+    alerts = relationship("Alert", back_populates="appointment", lazy="select")
+    review = relationship("Review", back_populates="appointment", uselist=False, lazy="joined")

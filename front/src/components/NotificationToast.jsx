@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiOutlineBell, HiOutlineX, HiOutlineClock, HiOutlineUser, HiOutlineOfficeBuilding, HiOutlineCalendar } from 'react-icons/hi';
 import api from '../services/api';
+import { queryClient } from '../services/queryClient';
+import { keys } from '../services/cache';
 import useAuthStore from '../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import { requestPushPermission, onForegroundMessage } from '../services/pushNotifications';
@@ -83,7 +85,7 @@ export default function NotificationToast() {
     const fetchPending = useCallback(async () => {
         if (!user) return;
         try {
-            const { data } = await api.get('/notifications/pending');
+            const { data } = await api.get('/notifications/pending', { silent: true });
             if (data.length > 0) {
                 setToasts((prev) => {
                     // Only add truly new ones
@@ -97,7 +99,9 @@ export default function NotificationToast() {
                 });
 
                 // Mark as seen on the server
-                await api.post('/notifications/mark-seen', data).catch(() => { });
+                await api.post('/notifications/mark-seen', data, { silent: true }).catch(() => { });
+                // Novas entradas no histórico/contador da central de notificações
+                queryClient.invalidateQueries({ queryKey: keys.notifications.all });
             }
         } catch {
             // Silent — don't crash on network issues

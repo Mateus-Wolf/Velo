@@ -14,6 +14,8 @@ import api from '../services/api';
 import HeaderNav from '../components/HeaderNav';
 import CompleteAppointmentModal from '../components/CompleteAppointmentModal';
 import { useTranslation } from 'react-i18next';
+import { useAppointments } from '../services/queries';
+import { onAppointmentsChanged, onAppointmentLeftList } from '../services/cache';
 
 function fmtTime(t) { return t ? t.substring(0, 5) : ''; }
 function fmtPrice(price) {
@@ -21,35 +23,23 @@ function fmtPrice(price) {
     return `R$ ${Number(price).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+const PENDING_PARAMS = { appointment_status: 'pending' };
+
 export default function PendingAppointmentsPage() {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: appointments = [], isLoading: loading } = useAppointments(PENDING_PARAMS);
     const [resolving, setResolving] = useState(null); // id being resolved
     const [completeTarget, setCompleteTarget] = useState(null); // appointment to complete
-
-    const fetchPending = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get('/appointments/', { params: { appointment_status: 'pending' } });
-            setAppointments(res.data);
-        } catch (err) {
-            console.error('Erro ao buscar pendentes:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchPending(); }, []);
 
     const handleResolve = async (appointmentId, newStatus) => {
         setResolving(appointmentId);
         try {
-            await api.patch(`/appointments/${appointmentId}/resolve`, {
+            const { data } = await api.patch(`/appointments/${appointmentId}/resolve`, {
                 new_status: newStatus,
             });
-            setAppointments(prev => prev.filter(a => a.id !== appointmentId));
+            onAppointmentLeftList(PENDING_PARAMS, appointmentId);
+            onAppointmentsChanged(data);
         } catch (err) {
             console.error('Erro ao resolver:', err);
         } finally {
@@ -61,11 +51,12 @@ export default function PendingAppointmentsPage() {
         if (!completeTarget) return;
         setResolving(completeTarget.id);
         try {
-            await api.patch(`/appointments/${completeTarget.id}/resolve`, {
+            const { data } = await api.patch(`/appointments/${completeTarget.id}/resolve`, {
                 new_status: 'completed',
                 ...paymentData,
             });
-            setAppointments(prev => prev.filter(a => a.id !== completeTarget.id));
+            onAppointmentLeftList(PENDING_PARAMS, completeTarget.id);
+            onAppointmentsChanged(data);
             setCompleteTarget(null);
         } catch (err) {
             console.error('Erro ao concluir:', err);

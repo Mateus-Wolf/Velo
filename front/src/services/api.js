@@ -8,9 +8,12 @@ const api = axios.create({
     },
 });
 
-// Attach JWT token to every request
+// Attach JWT token to every request.
+// Requests sent with `{ silent: true }` (polling, contadores, revalidação de cache)
+// não acionam o overlay global de carregamento.
 api.interceptors.request.use((config) => {
-    useLoadingStore.getState().increment();
+    config._counted = !config.silent;
+    if (config._counted) useLoadingStore.getState().increment();
     const token = localStorage.getItem('velo_token') || sessionStorage.getItem('velo_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -32,11 +35,11 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.response.use(
     (response) => {
-        useLoadingStore.getState().decrement();
+        if (response.config?._counted) useLoadingStore.getState().decrement();
         return response;
     },
     async (error) => {
-        useLoadingStore.getState().decrement();
+        if (error.config?._counted) useLoadingStore.getState().decrement();
         const originalRequest = error.config;
 
         // If 401 and we haven't already retried this request

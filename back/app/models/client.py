@@ -19,5 +19,5 @@ class Client(Base):
 
     # Relacionamentos
     user = relationship("User", back_populates="clients")
-    workplace_clients = relationship("WorkplaceClient", back_populates="client", lazy="selectin")
-    appointments = relationship("Appointment", back_populates="client", lazy="selectin")
+    workplace_clients = relationship("WorkplaceClient", back_populates="client", lazy="select")
+    appointments = relationship("Appointment", back_populates="client", lazy="select")

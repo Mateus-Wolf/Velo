@@ -25,13 +25,13 @@ import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import HeaderNav from '../components/HeaderNav';
 import { useTranslation } from 'react-i18next';
+import { useDashboardMetrics } from '../services/queries';
 
 export default function MetricsDashboardPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [metrics, setMetrics] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { data: metrics = null, isLoading: loading, refetch: fetchMetrics } = useDashboardMetrics();
     const [activeSlice, setActiveSlice] = useState(null); // Para o hint do gráfico de PIZZA
     const [aiInsight, setAiInsight] = useState(() => {
         try {
@@ -40,22 +40,6 @@ export default function MetricsDashboardPage() {
     });
     const [loadingInsight, setLoadingInsight] = useState(false);
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-
-    useEffect(() => {
-        fetchMetrics();
-    }, []);
-
-    const fetchMetrics = async () => {
-        setLoading(true);
-        try {
-            const { data } = await api.get('/dashboard/metrics');
-            setMetrics(data);
-        } catch (err) {
-            console.error('Erro ao buscar métricas:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const fetchAiInsight = async () => {
         setLoadingInsight(true);

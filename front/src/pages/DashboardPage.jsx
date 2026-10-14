@@ -21,6 +21,8 @@ import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 import HeaderNav from '../components/HeaderNav';
 import WorkplaceModal from '../components/WorkplaceModal';
+import { useWorkplaces } from '../services/queries';
+import { onWorkplaceCreated, onWorkplaceUpdated, onWorkplaceDeleted } from '../services/cache';
 
 const DAY_NAMES = {
     '0': 'Dom',
@@ -277,8 +279,7 @@ export default function DashboardPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [workplaces, setWorkplaces] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: workplaces = [], isLoading: loading } = useWorkplaces();
     const [modalOpen, setModalOpen] = useState(false);
     const [editingWorkplace, setEditingWorkplace] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -286,30 +287,12 @@ export default function DashboardPage() {
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('name-asc');
 
-    useEffect(() => {
-        fetchWorkplaces();
-    }, []);
-
-    const fetchWorkplaces = async () => {
-        setLoading(true);
-        try {
-            const { data } = await api.get('/workplaces/');
-            setWorkplaces(data);
-        } catch (err) {
-            console.error('Erro ao buscar locais:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleCreated = (newWorkplace) => {
-        setWorkplaces((prev) => [newWorkplace, ...prev]);
+        onWorkplaceCreated(newWorkplace);
     };
 
     const handleUpdated = (updatedWorkplace) => {
-        setWorkplaces((prev) =>
-            prev.map((wp) => (wp.id === updatedWorkplace.id ? updatedWorkplace : wp))
-        );
+        onWorkplaceUpdated(updatedWorkplace);
     };
 
     const handleDelete = async () => {
@@ -317,7 +300,7 @@ export default function DashboardPage() {
         setDeleting(true);
         try {
             await api.delete(`/workplaces/${deleteTarget.id}`);
-            setWorkplaces((prev) => prev.filter((wp) => wp.id !== deleteTarget.id));
+            onWorkplaceDeleted(deleteTarget.id);
             setDeleteTarget(null);
         } catch (err) {
             console.error('Erro ao excluir:', err);

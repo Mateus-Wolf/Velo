@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -28,6 +29,7 @@ from app.models.user import User
 from app.models.password_reset import PasswordReset
 from app.models.recognized_device import RecognizedDevice
 from app.models.staff_member import StaffMember
+from app.models.workplace import Workplace
 from app.services.email_service import send_email
 from app.services.email_templates import password_reset_code, two_factor_code_html
 
@@ -178,7 +180,7 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me")
-def me(account: CurrentAccount = Depends(get_current_account)):
+def me(account: CurrentAccount = Depends(get_current_account), db: Session = Depends(get_db)):
     """Retorna dados do usuário autenticado — inclui role e permissions para staff."""
     user = account.user
     base = {
@@ -192,7 +194,11 @@ def me(account: CurrentAccount = Depends(get_current_account)):
         "niche": user.niche,
         "crm": user.crm,
         "role": account.role,
-        "workplace_count": len(user.workplaces) if account.role == "admin" else len(account.permissions.get("allowed_workplace_ids", [])),
+        "workplace_count": (
+            db.query(func.count(Workplace.id)).filter(Workplace.user_id == user.id).scalar()
+            if account.role == "admin"
+            else len(account.permissions.get("allowed_workplace_ids", []))
+        ),
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "updated_at": user.updated_at.isoformat() if user.updated_at else None,
     }

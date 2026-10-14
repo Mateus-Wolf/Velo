@@ -28,7 +28,9 @@ class User(Base):
     crm = sa.Column(sa.String(50), nullable=True)
 
     # Relacionamentos
-    workplaces = relationship("Workplace", back_populates="user", lazy="selectin")
-    clients = relationship("Client", back_populates="user", lazy="selectin")
-    appointments = relationship("Appointment", back_populates="user", lazy="selectin")
-    recognized_devices = relationship("RecognizedDevice", back_populates="user", lazy="selectin")
+    # IMPORTANTE: manter lazy="select" (sob demanda). Com "selectin", TODA requisição autenticada
+    # (get_current_user) carregava em cascata todos os locais, clientes e agendamentos do usuário.
+    workplaces = relationship("Workplace", back_populates="user", lazy="select")
+    clients = relationship("Client", back_populates="user", lazy="select")
+    appointments = relationship("Appointment", back_populates="user", lazy="select")
+    recognized_devices = relationship("RecognizedDevice", back_populates="user", lazy="select")

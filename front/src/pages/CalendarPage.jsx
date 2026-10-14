@@ -30,6 +30,8 @@ import HeaderNav from '../components/HeaderNav';
 import SearchableClientSelect from '../components/SearchableClientSelect';
 import CompleteAppointmentModal from '../components/CompleteAppointmentModal';
 import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
+import { useAppointments, useWorkplaces } from '../services/queries';
+import { onAppointmentsChanged, onAppointmentsBulkChanged } from '../services/cache';
 
 const DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTH_NAMES = [
@@ -937,9 +939,9 @@ export default function CalendarPage() {
     const todayKey = dKey(today);
     const [currentMonth, setCurrentMonth] = useState(today.getMonth());
     const [currentYear, setCurrentYear] = useState(today.getFullYear());
-    const [appointments, setAppointments] = useState([]);
-    const [workplaces, setWorkplaces] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: appointments = [], isLoading: loadingAppointments } = useAppointments();
+    const { data: workplaces = [], isLoading: loadingWorkplaces } = useWorkplaces();
+    const loading = loadingAppointments || loadingWorkplaces;
     const [selectedDate, setSelectedDate] = useState(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [creationSummary, setCreationSummary] = useState(null);
@@ -963,42 +965,24 @@ export default function CalendarPage() {
         return m;
     }, [workplaces]);
 
-    useEffect(() => {
-        const fetchAll = async () => {
-            setLoading(true);
-            try {
-                const [apptRes, wpRes] = await Promise.all([
-                    api.get('/appointments/'),
-                    api.get('/workplaces/'),
-                ]);
-                setAppointments(apptRes.data);
-                setWorkplaces(wpRes.data);
-            } catch (err) {
-                console.error('Erro:', err);
-            } finally { setLoading(false); }
-        };
-        fetchAll();
-    }, []);
-
     const handleCreated = (a) => {
-        if (Array.isArray(a)) {
-            setAppointments((p) => [...p, ...a]);
-        } else {
-            setAppointments((p) => [...p, a]);
-        }
+        onAppointmentsChanged(a);
     };
 
     const handleUpdated = (updated) => {
-        setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+        onAppointmentsChanged(updated);
     };
 
     const handleCancel = async (cancelAllFuture = false) => {
         if (!cancelTarget) return;
         setCanceling(true);
         try {
-            await api.patch(`/appointments/${cancelTarget.id}/cancel?cancel_all_future=${cancelAllFuture}`);
-            const apptRes = await api.get('/appointments/');
-            setAppointments(apptRes.data);
+            const { data } = await api.patch(`/appointments/${cancelTarget.id}/cancel?cancel_all_future=${cancelAllFuture}`);
+            if (cancelAllFuture) {
+                onAppointmentsBulkChanged();
+            } else {
+                onAppointmentsChanged(data);
+            }
             setCancelTarget(null);
         } catch (err) {
             console.error('Erro ao cancelar:', err);
@@ -1009,9 +993,8 @@ export default function CalendarPage() {
         if (!completeTarget) return;
         setCompleting(true);
         try {
-            await api.patch(`/appointments/${completeTarget.id}/complete`, paymentData);
-            const apptRes = await api.get('/appointments/');
-            setAppointments(apptRes.data);
+            const { data } = await api.patch(`/appointments/${completeTarget.id}/complete`, paymentData);
+            onAppointmentsChanged(data);
             setCompleteTarget(null);
         } catch (err) {
             console.error('Erro ao concluir:', err);

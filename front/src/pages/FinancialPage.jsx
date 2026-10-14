@@ -15,52 +15,28 @@ import useAuthStore from '../store/useAuthStore';
 import HeaderNav from '../components/HeaderNav';
 import { useTranslation } from 'react-i18next';
 import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
+import { useDashboardMetrics, useGoalHistory } from '../services/queries';
+import { onGoalChanged, keys } from '../services/cache';
+import { queryClient } from '../services/queryClient';
 
 export default function FinancialPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, updateUser } = useAuthStore();
 
-    const [metrics, setMetrics] = useState(null);
-    const [loadingMetrics, setLoadingMetrics] = useState(true);
+    const { data: metrics = null, isLoading: loadingMetrics } = useDashboardMetrics();
+    const { data: goalHistory = [], isLoading: loadingHistory } = useGoalHistory();
     const [goalInput, setGoalInput] = useState(() => user?.monthly_goal ? formatCurrencyInput(user.monthly_goal) : '');
     const [isSavingGoal, setIsSavingGoal] = useState(false);
 
     const [projection, setProjection] = useState(null);
     const [loadingProjection, setLoadingProjection] = useState(false);
-
-    const [goalHistory, setGoalHistory] = useState([]);
-    const [loadingHistory, setLoadingHistory] = useState(true);
     const [clearingHistory, setClearingHistory] = useState(false);
 
     const fmtBRL = (v) => {
         if (v == null) return 'R$ 0,00';
         return `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
-
-    const fetchMetrics = useCallback(async () => {
-        setLoadingMetrics(true);
-        try {
-            const { data } = await api.get('/dashboard/metrics');
-            setMetrics(data);
-        } catch (err) {
-            console.error('Erro ao buscar métricas:', err);
-        } finally {
-            setLoadingMetrics(false);
-        }
-    }, []);
-
-    const fetchHistory = useCallback(async () => {
-        setLoadingHistory(true);
-        try {
-            const { data } = await api.get('/financial/goal-history');
-            setGoalHistory(data.history || []);
-        } catch (err) {
-            console.error('Erro ao buscar histórico:', err);
-        } finally {
-            setLoadingHistory(false);
-        }
-    }, []);
 
     const fetchProjection = useCallback(async (forceRefresh = false) => {
         setLoadingProjection(true);
@@ -76,13 +52,11 @@ export default function FinancialPage() {
     }, []);
 
     useEffect(() => {
-        fetchMetrics();
-        fetchHistory();
         // Buscar projeção do cache (sem force_refresh) ao abrir a página
         if (user?.monthly_goal > 0) {
             fetchProjection(false);
         }
-    }, []);
+    }, [user?.monthly_goal, fetchProjection]);
 
     const handleSaveGoal = async () => {
         setIsSavingGoal(true);
@@ -90,8 +64,7 @@ export default function FinancialPage() {
             const parsedGoal = parseCurrencyInput(goalInput) || 0;
             const { data } = await api.put('/financial/goal', { goal_value: parsedGoal });
             updateUser({ ...user, monthly_goal: data.monthly_goal });
-            // Refresh everything after saving
-            await Promise.all([fetchMetrics(), fetchHistory()]);
+            onGoalChanged();
             // Generate new projection
             if (data.monthly_goal > 0) {
                 fetchProjection(true);
@@ -109,7 +82,7 @@ export default function FinancialPage() {
         setClearingHistory(true);
         try {
             await api.delete('/financial/goal-history');
-            setGoalHistory([]);
+            queryClient.setQueryData(keys.financial.goalHistory, []);
         } catch (err) {
             console.error('Erro ao limpar histórico:', err);
         } finally {
