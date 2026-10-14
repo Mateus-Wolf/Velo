@@ -215,3 +215,76 @@
   background: rgba(2, 132, 199, 0.6);
 }
 
+/* ---- Light Mode: Clickable text turns dark on hover ---- */
+.theme-light .hover\:text-white:hover,
+.theme-light [class*="hover:text-white"]:hover {
+  color: var(--color-surface-50) !important;
+}
+
+.theme-light .group:hover .group-hover\:text-white,
+.theme-light .group:hover [class*="group-hover:text-white"] {
+  color: var(--color-surface-50) !important;
+}
+
+.theme-light .hover\:text-brand-300:hover,
+.theme-light [class*="hover:text-brand-300"]:hover {
+  color: var(--color-brand-900) !important;
+}
+
+.theme-light .hover\:text-brand-400:hover,
+.theme-light [class*="hover:text-brand-400"]:hover {
+  color: var(--color-brand-900) !important;
+}
+
+.theme-light .hover\:text-surface-100:hover,
+.theme-light [class*="hover:text-surface-100"]:hover,
+.theme-light .hover\:text-surface-200:hover,
+.theme-light [class*="hover:text-surface-200"]:hover,
+.theme-light [class*="hover:text-surface-200/80"]:hover {
+  color: var(--color-surface-50) !important;
+}
+
+.theme-light .group:hover .group-hover\:text-surface-100,
+.theme-light .group:hover [class*="group-hover:text-surface-100"] {
+  color: var(--color-surface-50) !important;
+}
+
+.theme-light .group:hover .group-hover\:text-gradient {
+  -webkit-text-fill-color: var(--color-surface-50) !important;
+  color: var(--color-surface-50) !important;
+}
+
+.theme-light .hover\:text-red-300:hover,
+.theme-light [class*="hover:text-red-300"]:hover {
+  color: #dc2626 !important;
+}
+
+.theme-light .hover\:text-emerald-300:hover,
+.theme-light [class*="hover:text-emerald-300"]:hover {
+  color: #047857 !important;
+}
+
+/* Subtle background on hover for ghost/interactive items in light mode */
+.theme-light [class*="hover:bg-white\/5"]:hover,
+.theme-light [class*="hover:bg-white\/10"]:hover {
+  background-color: rgba(14, 165, 233, 0.1) !important;
+}
+
+/* Active navigation badge text contrast in light mode */
+.theme-light nav button[class*="text-brand-300"],
+.theme-light [class*="bg-brand-500/15"][class*="text-brand-300"] {
+  color: var(--color-brand-700) !important;
+}
+
+/* General clickable text hover darkening in light mode */
+.theme-light a:not(.gradient-brand):hover,
+.theme-light button:not(.gradient-brand):not([class*="bg-brand-"]):not([class*="bg-red-500"]):not([class*="bg-emerald-500"]):not([class*="bg-amber-500"]):hover {
+  color: var(--color-surface-50);
+}
+
+.theme-light a:not(.gradient-brand):hover span:not([class*="bg-"]):not([class*="text-emerald"]):not([class*="text-red"]):not([class*="text-amber"]):not([class*="badge"]),
+.theme-light button:not(.gradient-brand):not([class*="bg-brand-"]):not([class*="bg-red-500"]):not([class*="bg-emerald-500"]):not([class*="bg-amber-500"]):hover span:not([class*="bg-"]):not([class*="text-emerald"]):not([class*="text-red"]):not([class*="text-amber"]):not([class*="badge"]) {
+  color: var(--color-surface-50) !important;
+}
+
+
